@@ -840,3 +840,674 @@ Stop and wait for human review.
 ### Outcome
 
 Created `SCOPE.md`; modified `AGENTS.md` and `docs/ai-prompts.md`. Exponentiation (`REQ-O-001`), square root (`REQ-O-002`), and percentage (`REQ-O-003`) remain optional by assessment provenance but were promoted into committed project delivery scope. Approved an expression-oriented calculator, postfix percentage values, unary real-only square root, a bounded expression language, backend-owned evaluation, two user-selectable interchangeable backends, and backend behavioral parity. Deferred the formal API and grammar, numeric rules, exact errors, backend languages and frameworks, expression-evaluation approach, and Docker decision. No implementation technology, backend language, framework, or expression library was selected.
+
+## P004
+
+### Prompt ID
+
+P004
+
+### Phase
+
+Behavioral Specification and Acceptance Criteria
+
+### Objective
+
+Define the complete externally observable behavior of the committed Calculator scope before any architecture, library, framework, or implementation decision is made.
+
+### Prompt
+
+```text
+Prompt ID: P004
+
+Phase: Behavioral Specification and Acceptance Criteria
+
+Objective:
+Define the complete externally observable behavior of the committed Calculator scope before any architecture, library, framework, or implementation decision is made.
+
+This specification must be precise enough that two independent backend implementations can be tested for behavioral parity without knowing how either is implemented.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `docs/ai-prompts.md`.
+5. Record this exact prompt as `P004` in `docs/ai-prompts.md` before modifying any other repository file.
+
+Create only:
+
+* `SPEC.md`
+
+Update only:
+
+* `AGENTS.md`, if necessary to establish `SPEC.md` authority consistently with the existing artifact hierarchy.
+* `docs/ai-prompts.md` with P004 and its factual Outcome.
+
+Do NOT implement application code.
+Do NOT create `DESIGN.md`.
+Do NOT create `TASKS.md`.
+Do NOT initialize Go, Java, React, Docker, Maven, npm, or any build system.
+Do NOT choose frameworks.
+Do NOT choose an expression library.
+Do NOT choose an expression parser implementation.
+
+The specification defines behavior. Future implementations must conform to it.
+
+# 1. Traceability model
+
+Use stable identifiers for specification rules:
+
+* `SPEC-EXPR-###` — expression language
+* `SPEC-API-###` — REST behavior
+* `SPEC-ERR-###` — error behavior
+* `SPEC-UI-###` — frontend interaction behavior
+* `SPEC-PAR-###` — backend parity
+
+Use acceptance criterion identifiers:
+
+* `AC-EXPR-###`
+* `AC-API-###`
+* `AC-ERR-###`
+* `AC-UI-###`
+* `AC-PAR-###`
+
+Every behavioral specification rule must reference the requirement(s) and/or approved scope decision it realizes.
+
+Every acceptance criterion must reference its specification rule.
+
+Do not invent implementation task IDs or test IDs yet.
+
+# 2. Numeric model
+
+Specify the product numeric model as finite IEEE-754 binary64 real numbers.
+
+The specification must state:
+
+* numeric literals are decimal representations
+* implementations use binary64-equivalent semantics for calculation
+* Java `double` and Go `float64` are examples of compatible representations, but this statement must not select Java or Go as architecture
+* successful API results must always be finite JSON numbers
+* `NaN`, positive infinity, and negative infinity must never be returned as successful results
+* complex numbers are unsupported
+
+Do not promise arbitrary decimal precision.
+
+For cross-backend numeric parity, define:
+
+* exact equality where results are exactly representable and equivalent
+* otherwise absolute numeric difference no greater than `1e-12`
+
+Document that this tolerance is for verification/parity and does not imply rounding every user-visible result to 12 decimal places.
+
+# 3. Expression transport syntax
+
+Define one canonical expression syntax used in the REST contract.
+
+Canonical transport tokens:
+
+* digits: `0` through `9`
+* decimal point: `.`
+* addition: `+`
+* subtraction: `-`
+* multiplication: `*`
+* division: `/`
+* exponentiation: `^`
+* percentage: `%`
+* square root: `sqrt(...)`
+* grouping: `(` and `)`
+
+Whitespace between tokens is permitted and semantically insignificant where it does not split a token.
+
+The frontend may display presentation symbols such as:
+
+* `×`
+* `÷`
+* `√`
+* `xʸ`
+
+but must translate them to canonical transport syntax before submission.
+
+The backend contract must not depend on Unicode calculator symbols.
+
+# 4. Numeric literals
+
+Define a decimal numeric literal precisely enough to reject malformed values.
+
+Support examples:
+
+* `0`
+* `12`
+* `12.5`
+* `0.5`
+* `.5`
+
+Reject malformed examples such as:
+
+* `.`
+* `1.2.3`
+
+Scientific notation such as `1e3` is outside committed expression syntax and must be rejected.
+
+Do not add hexadecimal, binary, octal, locale-specific commas, or numeric separators.
+
+# 5. Operators and semantics
+
+Define:
+
+## Addition
+
+`a + b`
+
+## Subtraction
+
+`a - b`
+
+## Multiplication
+
+`a * b`
+
+## Division
+
+`a / b`
+
+Division by numeric zero is invalid.
+
+This includes positive and negative zero according to binary64 semantics.
+
+## Exponentiation
+
+`a ^ b`
+
+Exponentiation is right-associative.
+
+Therefore:
+
+`2 ^ 3 ^ 2`
+
+means:
+
+`2 ^ (3 ^ 2)`
+
+and evaluates to:
+
+`512`.
+
+## Percentage
+
+Percentage is unary postfix syntax.
+
+`x%`
+
+means:
+
+`x / 100`.
+
+Examples:
+
+`20% = 0.2`
+
+`150 * 20% = 30`
+
+Percentage may participate compositionally in an expression.
+
+Do not introduce context-sensitive consumer-calculator behavior such as interpreting `100 + 20%` as `120`.
+
+Under this specification:
+
+`100 + 20% = 100.2`.
+
+## Square root
+
+Canonical syntax:
+
+`sqrt(expression)`
+
+Square root accepts an expression argument.
+
+Examples:
+
+`sqrt(81) = 9`
+
+`sqrt(9 + 7) = 4`
+
+Square root of a negative numeric value is invalid because the product supports real numbers only.
+
+# 6. Unary signs
+
+Support unary `+` and unary `-`.
+
+Examples:
+
+`-2`
+`+2`
+`3 * -2`
+
+Define the precedence interaction with exponentiation explicitly:
+
+`-2 ^ 2`
+
+must mean:
+
+`-(2 ^ 2)`
+
+and evaluate to:
+
+`-4`.
+
+`(-2) ^ 2`
+
+must evaluate to:
+
+`4`.
+
+Do not leave this behavior library-dependent.
+
+# 7. Precedence and associativity
+
+Specify precedence from highest binding to lowest in a way consistent with all required examples.
+
+The intended semantic order is:
+
+1. grouping and function application: parentheses and `sqrt(...)`
+2. postfix percentage `%`
+3. exponentiation `^`
+4. unary `+` and unary `-`, subject to the exponentiation rule above
+5. multiplication `*` and division `/`
+6. addition `+` and subtraction `-`
+
+Binary `+`, `-`, `*`, and `/` are left-associative.
+
+Exponentiation is right-associative.
+
+Include acceptance criteria demonstrating precedence rather than relying only on prose.
+
+# 8. Expression boundaries
+
+A submitted expression:
+
+* is required
+* must be a JSON string
+* must not be empty
+* must not consist only of whitespace
+* must contain no more than 256 characters before evaluation
+* must conform entirely to the approved grammar
+* must not contain variables
+* must not contain unapproved functions
+* must not contain arbitrary executable content
+
+The expression language is a closed allowlist, not a general-purpose evaluator.
+
+Examples that must be invalid include:
+
+* `foo + 2`
+* `sin(1)`
+* `1e3`
+* `2 +`
+* `2 ++ 3`
+* `sqrt()`
+* unbalanced parentheses
+* any token outside the approved language
+
+Do not define backend sanitization by attempting to execute and catch arbitrary code. Unsupported syntax is invalid input.
+
+# 9. REST contract
+
+Define:
+
+`POST /api/calculate`
+
+Request content type:
+
+`application/json`
+
+Successful request body:
+
+```json
+{
+  "expression": "(2 + 3) * 4"
+}
+```
+
+Successful response:
+
+HTTP `200`
+
+```json
+{
+  "result": 20
+}
+```
+
+The response must contain a finite JSON number.
+
+No additional success fields are required.
+
+Do not add expression echoing, metadata, backend identifiers, timestamps, or diagnostic information to the success response.
+
+# 10. Error contract
+
+All application-defined calculator errors must use:
+
+```json
+{
+  "code": "ERROR_CODE",
+  "message": "Human-readable message"
+}
+```
+
+Use HTTP `400` for invalid calculation requests covered by the calculator contract.
+
+Define this deliberately small error taxonomy:
+
+## INVALID_REQUEST
+
+Use when the HTTP JSON request does not contain a usable expression value, including:
+
+* missing `expression`
+* `expression` is null
+* `expression` is not a string
+* empty/whitespace-only expression
+* expression exceeds 256 characters
+
+Canonical message:
+
+`A non-empty expression of at most 256 characters is required`
+
+## INVALID_EXPRESSION
+
+Use when the expression does not conform to the approved expression grammar.
+
+Canonical message:
+
+`Expression is invalid`
+
+## DIVISION_BY_ZERO
+
+Canonical message:
+
+`Division by zero is not allowed`
+
+## INVALID_DOMAIN
+
+Use for mathematically unsupported real-number domain operations such as square root of a negative value.
+
+Canonical message:
+
+`Expression is outside the supported real-number domain`
+
+## NON_FINITE_RESULT
+
+Use when evaluation would otherwise produce `NaN`, positive infinity, or negative infinity, except when a more specific contract error such as `DIVISION_BY_ZERO` or `INVALID_DOMAIN` applies.
+
+Canonical message:
+
+`Expression result is not finite`
+
+All five use HTTP `400`.
+
+Malformed JSON that prevents the request from being interpreted as the calculator request must also produce HTTP `400` using `INVALID_REQUEST`.
+
+Unexpected internal failures are not application-defined calculator errors and must not expose stack traces, implementation details, parser internals, or dependency-specific messages.
+
+Do not specify a custom HTTP 500 body unless required by the assessment.
+
+# 11. Content type
+
+For a valid calculator request, the API consumes JSON.
+
+A request with an unsupported media type may use the framework/server-standard HTTP `415 Unsupported Media Type`.
+
+Do not require both backend implementations to reproduce framework-specific 415 response bodies.
+
+Parity applies to the calculator contract, not framework-generated diagnostic bodies outside that contract.
+
+# 12. Frontend observable behavior
+
+Specify behavior without choosing React component structure or styling implementation.
+
+The frontend must:
+
+* provide calculator controls for the committed keypad scope
+* display the expression being constructed
+* display the latest successful result
+* allow supported keyboard input where a physical keyboard is available
+* provide clear/reset
+* provide evaluate/equals
+* allow selection between the two backend implementations
+* send evaluation only to the currently selected backend
+* translate presentation symbols to canonical transport syntax
+* display backend-provided calculator error messages
+* display a clear connectivity error when the selected backend cannot be reached
+* prevent accidental duplicate evaluation while a request is already in progress
+* remain usable at representative mobile and desktop viewport sizes
+
+Define clear/reset behavior:
+
+* clear the current expression
+* clear the displayed result
+* clear any displayed calculator/connectivity error
+
+Define evaluation behavior:
+
+* evaluating an empty expression must not issue an API request
+* on successful evaluation, display the returned result
+* on failed evaluation, do not leave a stale successful result presented as the current answer
+* changing backend does not itself evaluate the expression
+
+Do not define CSS, colors, component names, React state management, or responsive breakpoints yet.
+
+# 13. Keyboard behavior
+
+Specify only supported keyboard behavior.
+
+At minimum:
+
+* digits `0-9`
+* `.`
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* `(`
+* `)`
+* Enter as evaluate
+* Escape as clear/reset
+* Backspace removes the most recently entered expression character where applicable
+
+Square root does not need a dedicated physical-keyboard shortcut beyond the ability to construct its canonical `sqrt(...)` representation through approved UI behavior.
+
+Do not require arbitrary free-form text entry.
+
+# 14. Backend selection
+
+The frontend exposes two backend choices.
+
+Do not name their languages yet.
+
+Use specification-neutral identifiers conceptually such as:
+
+* Backend A
+* Backend B
+
+Architecture will later assign implementation technologies.
+
+The backend selection must not alter expression semantics.
+
+Both backends expose the same calculator contract.
+
+# 15. Backend parity
+
+Specify:
+
+For the same valid request:
+
+* both backends return HTTP 200
+* both return the same JSON response structure
+* results satisfy the numeric parity rule
+
+For the same application-defined invalid request:
+
+* both return the same application-defined HTTP status
+* both return the same error code
+* both return the same canonical message where this specification defines one
+
+Framework-generated responses outside the calculator contract, such as an unsupported-media-type body, do not require byte-for-byte parity.
+
+# 16. Acceptance criteria
+
+Create explicit acceptance criteria covering at minimum:
+
+## Core operations
+
+* addition
+* subtraction
+* multiplication
+* division
+* decimal calculation
+
+## Advanced committed operations
+
+* exponentiation
+* right-associative exponentiation
+* square root
+* square root of compound expression
+* percentage
+* percentage composed with multiplication
+
+## Expression semantics
+
+* arithmetic precedence
+* parentheses overriding precedence
+* unary negative
+* exponentiation vs unary negative
+* percentage compositional semantics
+
+## Error behavior
+
+* division by zero
+* negative square root
+* malformed expression
+* unsupported function
+* unsupported scientific notation
+* empty expression
+* missing expression
+* non-string expression
+* expression over 256 characters
+* non-finite result
+
+## API behavior
+
+* successful POST request
+* JSON result structure
+* malformed JSON
+* unsupported media type at status level
+
+## UI behavior
+
+* keypad construction
+* keyboard construction
+* display expression
+* clear
+* backspace
+* evaluate
+* result display
+* error display
+* stale result removal
+* duplicate-submit prevention
+* backend selection
+* no request for empty expression
+* mobile usability
+* desktop usability
+
+## Backend parity
+
+Include representative parity acceptance criteria covering:
+
+* a basic operation
+* a compound expression
+* an advanced operation
+* division by zero
+* invalid grammar
+* invalid domain
+* non-finite result
+
+Acceptance criteria must use concrete inputs and expected observable outputs wherever possible.
+
+# 17. Traceability matrices
+
+At the end of `SPEC.md`, include:
+
+## Requirement → Specification
+
+Map all requirements affected by this behavioral specification to relevant `SPEC-*` rules.
+
+Include the optional-source requirements now committed by `SCOPE.md`.
+
+## Specification → Acceptance Criteria
+
+Map each `SPEC-*` rule to one or more `AC-*` identifiers.
+
+Do not map to future implementation tasks or test filenames yet.
+
+# 18. Do not over-specify implementation
+
+The document must not choose or mention as selected architecture:
+
+* Spring Boot
+* Gin
+* Echo
+* Java backend
+* Go backend
+* Vite
+* TypeScript
+* expression-evaluation libraries
+* parser algorithms
+* AST structures
+* repository package layout
+* Docker implementation
+
+Language names may appear only when explaining binary64 compatibility already required above, not as selected implementation technologies.
+
+# 19. Prompt outcome
+
+After completing `SPEC.md`, update P004's Outcome in `docs/ai-prompts.md` with:
+
+* files created
+* files modified
+* number of specification rules by category
+* number of acceptance criteria by category
+* major previously open behavioral decisions resolved
+* remaining architecture decisions
+* confirmation that no implementation technology or expression library was selected
+
+Keep the outcome factual.
+
+# Verification
+
+After completing the phase:
+
+1. Show the complete `SPEC.md`.
+2. Show any changed section of `AGENTS.md`.
+3. Show the P004 entry from `docs/ai-prompts.md`.
+4. Show `git diff --stat`.
+5. Show `git status`.
+6. Report the number of `SPEC-*` rules.
+7. Report the number of `AC-*` acceptance criteria.
+8. Confirm every committed calculator operation has explicit acceptance coverage.
+9. Confirm both valid and invalid expression behavior are covered.
+10. Confirm backend parity has explicit acceptance coverage.
+11. Identify any behavioral question that still cannot be resolved without an architecture decision.
+12. Confirm no application code, build configuration, framework, parser, or expression library was created or selected.
+
+Do not commit.
+Do not push.
+
+Stop and wait for human review.
+```
+
+### Outcome
+
+Created `SPEC.md`; modified `docs/ai-prompts.md`; `AGENTS.md` required no change because it already establishes `SPEC.md` authority consistently. The specification contains 11 expression rules, 3 API rules, 6 error rules, 7 UI rules, and 2 parity rules. It contains 20 expression acceptance criteria, 3 API criteria, 12 error criteria, 16 UI criteria, and 7 parity criteria. It resolves the numeric model and parity tolerance, canonical expression tokens and grammar, operator semantics and precedence, request and response contracts, error taxonomy, content-type status behavior, frontend interactions, keyboard behavior, backend selection, and valid/invalid backend parity. Backend languages and frameworks, evaluation approach or library, parser design, frontend tooling and internal structure, deployment, and optional Docker support remain architecture decisions. No implementation technology, framework, parser implementation, or expression library was selected.
