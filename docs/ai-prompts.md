@@ -2867,3 +2867,547 @@ Stop and wait for human review.
 ### Outcome
 
 Created `TASKS.md` and modified `docs/ai-prompts.md`; `AGENTS.md` required no change. The plan contains 8 Go tasks, 5 frontend tasks, 6 Java tasks, 1 cross-backend parity task, 1 Docker task, 2 documentation tasks, and 1 final-submission task, for 24 tasks total. The ordered implementation establishes and verifies the primary Go backend first, then the frontend, independent Java compatibility backend, live parity, container delivery, documentation, prompt disclosure, and the final quality gate. The traceability matrix plans implementation and verification coverage for every committed calculator operation, frontend behavior, both backend contracts, parity extension, Docker commitment, quality/coverage requirement, and documentation deliverable. No application code, tests, dependency manifest, Dockerfile, Compose file, build configuration, or build project was created or initialized.
+
+## P007
+
+### Prompt ID
+
+P007
+
+### Phase
+
+Implementation — Go Backend Bootstrap
+
+### Objective
+
+Execute only `TASK-GO-001` from `TASKS.md`: initialize the primary Go backend as a minimal, buildable, testable service shell without implementing calculator behavior.
+
+### Prompt
+
+```text
+Prompt ID: P007
+
+Phase: Implementation — Go Backend Bootstrap
+
+Objective:
+Execute only `TASK-GO-001` from `TASKS.md`: initialize the primary Go backend as a minimal, buildable, testable service shell without implementing calculator behavior.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-001 and any other ADR directly referenced by `TASK-GO-001`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P007` in `docs/ai-prompts.md` before modifying any application file.
+
+Implement only:
+
+`TASK-GO-001 — Bootstrap primary Go backend`
+
+Do NOT implement:
+
+* expression parsing
+* calculator operations
+* REST calculator endpoint
+* request/response DTOs
+* calculator error mapping
+* frontend code
+* Java code
+* Docker
+* parity scripts
+
+Do NOT modify `SPEC.md`, `DESIGN.md`, `SCOPE.md`, or `REQUIREMENTS.md`.
+
+If implementation reveals a conflict with an approved artifact, stop and report it instead of changing the artifact.
+
+## 1. Create the Go project
+
+Create:
+
+`backend-go/`
+
+Initialize a Go module.
+
+Use the currently installed/supported Go version available in the developer environment.
+
+Before selecting the module/toolchain declaration, inspect:
+
+`go version`
+
+Use a module path appropriate for the GitHub repository:
+
+`github.com/maiandreh/fullstack-calculator-double-backend/backend-go`
+
+Do not add third-party production dependencies.
+
+The resulting production dependency graph should use only the Go standard library.
+
+## 2. Minimal application entry point
+
+Create the smallest useful Go application entry point.
+
+Requirements:
+
+* application starts an HTTP server
+* default port is `8080`
+* port must be configurable through an environment variable
+* use a small, explicit configuration approach
+* use `net/http`
+* do not introduce a configuration library
+
+Use a clear environment variable name such as:
+
+`PORT`
+
+If `PORT` is absent, default to:
+
+`8080`
+
+If the supplied port value is unusable, fail fast with a clear startup error rather than silently falling back.
+
+Do not implement `/api/calculate` yet.
+
+## 3. Minimal health endpoint
+
+A minimal infrastructure health endpoint is permitted for bootstrap verification:
+
+`GET /health`
+
+It may return:
+
+HTTP `200`
+
+with a small JSON response such as:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+This endpoint is infrastructure-only and must not be presented as calculator functionality.
+
+Do not create elaborate health-check abstractions.
+
+## 4. Application structure
+
+Keep the bootstrap intentionally small.
+
+A reasonable target may be conceptually equivalent to:
+
+```text
+backend-go/
+├── go.mod
+├── cmd/
+│   └── server/
+│       └── main.go
+└── internal/
+    └── ...
+```
+
+However, do not create empty directories or placeholder abstractions merely to match an imagined future structure.
+
+Prefer the smallest structure that is clear today.
+
+Do not introduce:
+
+* interfaces without an actual substitution requirement
+* dependency injection frameworks
+* router frameworks
+* service layers
+* repository layers
+* domain packages before domain behavior exists
+* configuration frameworks
+
+## 5. HTTP server quality
+
+Use idiomatic standard-library server setup.
+
+Avoid calling `http.ListenAndServe` with a nil/default mux if a small explicit server/mux structure is clearer.
+
+Set reasonable server timeouts suitable for a small HTTP service if this can be done without unnecessary complexity.
+
+Do not introduce production infrastructure beyond what is proportionate to the assessment.
+
+## 6. Tests
+
+Add only bootstrap-level tests.
+
+Test behavior that exists in this increment, for example:
+
+* health endpoint returns HTTP 200
+* health response has the expected JSON structure
+* default/configured port logic if extracted into directly testable code
+
+Do not create calculator tests.
+
+Do not create parser tests.
+
+Do not create acceptance tests for functionality that does not exist yet.
+
+## 7. Repository hygiene
+
+Ensure generated Go artifacts are already covered by the repository `.gitignore`.
+
+Do not modify `.gitignore` unless a concrete Go-generated artifact from this increment is missing.
+
+If `.gitignore` must change, explain why.
+
+Do not commit generated binaries.
+
+## 8. Task tracking
+
+Update only the status/details related to `TASK-GO-001` in `TASKS.md`.
+
+Mark `TASK-GO-001` complete only if its Definition of Done is fully satisfied:
+
+* module builds
+* baseline tests pass
+* formatting is clean
+* `go vet` passes
+* no unrelated functionality exists
+* no unapproved production dependency exists
+
+Do not alter the status of any other task.
+
+## 9. Verification commands
+
+Run from `backend-go/` as applicable:
+
+```bash
+gofmt -w .
+go test ./...
+go vet ./...
+go build ./...
+```
+
+Also inspect:
+
+```bash
+go list -m all
+```
+
+Confirm no unapproved third-party production dependency was added.
+
+Run the server and verify the health endpoint manually:
+
+```bash
+curl -i http://localhost:8080/health
+```
+
+Stop the server after verification.
+
+## 10. Required report
+
+After implementation, report:
+
+* installed Go version used
+* files created
+* files modified
+* module path
+* production dependencies
+* tests executed
+* test results
+* `go vet` result
+* build result
+* manual `/health` smoke-test result
+* `git diff --stat`
+* `git status`
+* remaining work
+* any deviation from `SPEC.md`, `DESIGN.md`, ADRs, or `TASKS.md`
+
+## 11. Prompt audit outcome
+
+Update the P007 entry in `docs/ai-prompts.md` with a factual Outcome including:
+
+* `TASK-GO-001` executed
+* Go version selected
+* files created/modified
+* verification commands and results
+* whether the task was marked complete
+* confirmation that no calculator behavior was implemented
+* confirmation that no third-party production dependency was introduced
+
+Do not rewrite the P007 prompt text.
+
+## Final constraints
+
+Do not implement anything from `TASK-GO-002` or later.
+
+Do not commit.
+Do not push.
+
+Stop after `TASK-GO-001` and wait for human review.
+```
+
+### Outcome
+
+Attempted `TASK-GO-001` and stopped before application-file modification because `go version` failed with `go: command not found`. Read-only checks of `PATH`, `/usr/local/go/bin/go`, `/usr/bin/go`, `/snap/bin/go`, `/opt/go/bin/go`, and available package metadata found no installed Go toolchain. This conflicts with the approved design/task assumption that a currently supported Go release is available in the developer environment, so no Go version or module/toolchain declaration was selected. Created no `backend-go/` files and ran no Go formatting, tests, vet, build, dependency-list, server, or health-smoke verification because those commands require the missing toolchain. `TASK-GO-001` remains `Not Started`. No calculator behavior and no third-party production dependency were introduced; only `docs/ai-prompts.md` was modified to record P007 and this outcome.
+
+## P007-R1
+
+### Prompt ID
+
+P007-R1
+
+### Phase
+
+Implementation — Go Backend Bootstrap / Resume
+
+### Objective
+
+Resume the previously blocked P007 execution of `TASK-GO-001` now that the Go toolchain has been installed.
+
+### Prompt
+
+```text
+Prompt ID: P007-R1
+
+Phase: Implementation — Go Backend Bootstrap / Resume
+
+Objective:
+Resume the previously blocked P007 execution of `TASK-GO-001` now that the Go toolchain has been installed.
+
+This is a continuation of P007, not a new implementation phase.
+
+Before modifying application files:
+
+1. Read `AGENTS.md`.
+2. Read the P007 entry and blocked Outcome in `docs/ai-prompts.md`.
+3. Read `TASK-GO-001` in `TASKS.md`.
+4. Run:
+
+`go version`
+
+5. Confirm that a supported Go toolchain is now available on PATH.
+6. Record this exact continuation prompt as `P007-R1` in `docs/ai-prompts.md`.
+
+Do not delete, rewrite, or conceal the original blocked P007 outcome.
+
+The prompt history must show:
+
+P007 attempted
+→ environment prerequisite missing
+→ execution stopped safely
+→ Go installed by the human developer
+→ P007-R1 resumed the same approved task
+
+If Go is still unavailable, stop again without modifying application files.
+
+If Go is available, execute the original P007 instructions for `TASK-GO-001` exactly as previously approved.
+
+In particular:
+
+* create only the Go backend bootstrap
+* initialize the approved Go module
+* use standard-library-only production dependencies
+* default to port 8080
+* support PORT configuration
+* add the minimal `/health` infrastructure endpoint
+* add only bootstrap-level tests
+* do not implement calculator behavior
+* do not implement parser behavior
+* do not implement `/api/calculate`
+* do not start any later task
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Start the server and manually verify:
+
+`curl -i http://localhost:8080/health`
+
+Stop the server after the smoke test.
+
+If all Definition of Done conditions for `TASK-GO-001` are satisfied:
+
+* mark only `TASK-GO-001` as complete
+* leave every later task unchanged
+
+Update the P007-R1 Outcome with factual verification evidence.
+
+Do not alter the original P007 blocked Outcome.
+
+Report:
+
+* Go version
+* module path
+* files created/modified
+* dependencies
+* tests and results
+* vet result
+* build result
+* health smoke-test result
+* task status
+* `git diff --stat`
+* `git status`
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-001.
+```
+
+### Outcome
+
+P007-R1 attempted to resume the same approved `TASK-GO-001`, but the prerequisite check again failed: `go version` returned `go: command not found` in the execution environment. In accordance with this continuation prompt, execution stopped before modifying application files. The original blocked P007 outcome remains unchanged; no Go version or module path declaration was selected, `backend-go/` was not created, no verification commands or health smoke test could run, and `TASK-GO-001` remains `Not Started`. No calculator/parser behavior or third-party production dependency was introduced. Only `docs/ai-prompts.md` was modified to record this continuation and factual outcome.
+
+## P007-R2
+
+### Prompt ID
+
+P007-R2
+
+### Phase
+
+Implementation — Go Backend Bootstrap / Resume
+
+### Objective
+
+Resume the previously blocked execution of `TASK-GO-001` now that the Go toolchain is available in the Codex environment.
+
+### Prompt
+
+```text
+Prompt ID: P007-R2
+
+Phase: Implementation — Go Backend Bootstrap / Resume
+
+Objective:
+Resume the previously blocked execution of `TASK-GO-001` now that the Go toolchain is available in the Codex environment.
+
+This is a continuation of P007 and P007-R1, not a new implementation phase.
+
+Before modifying application files:
+
+1. Read `AGENTS.md`.
+2. Read `TASKS.md`.
+3. Read P007 and P007-R1 in `docs/ai-prompts.md`.
+4. Run:
+
+   * `go version`
+   * `which go`
+5. Confirm that Go is available on PATH.
+6. Record this exact prompt as `P007-R2` in `docs/ai-prompts.md`.
+
+Do not rewrite or delete the original P007 or P007-R1 blocked outcomes.
+
+The audit trail must preserve this sequence:
+
+P007
+→ blocked because Go was unavailable
+
+P007-R1
+→ blocked because Go was still unavailable in the Codex environment
+
+P007-R2
+→ resumed after environment setup
+
+If Go is still unavailable, stop without modifying application files.
+
+If Go is available, execute only:
+
+`TASK-GO-001 — Bootstrap primary Go backend`
+
+Follow the previously approved P007 scope.
+
+Create `backend-go/` and:
+
+* initialize the module:
+  `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`
+* use only Go standard-library production dependencies
+* create a minimal HTTP application
+* default to port `8080`
+* allow the port to be configured using `PORT`
+* fail clearly if `PORT` is unusable
+* use `net/http`
+* create the minimal infrastructure endpoint:
+  `GET /health`
+* return HTTP 200 with JSON equivalent to:
+  `{"status":"ok"}`
+
+Do not implement:
+
+* `/api/calculate`
+* expression parsing
+* calculator operations
+* calculator DTOs
+* calculator error mapping
+* frontend
+* Java
+* Docker
+* parity tooling
+
+Keep the project structure intentionally small.
+
+Do not create speculative packages, interfaces, services, repositories, or dependency-injection abstractions.
+
+Add only bootstrap-level tests for behavior implemented in this task.
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Start the service and verify:
+
+`curl -i http://localhost:8080/health`
+
+Stop the service after the smoke test.
+
+If all Definition of Done conditions are satisfied:
+
+* mark only `TASK-GO-001` as complete
+* leave every later task unchanged
+
+Update the P007-R2 Outcome with factual evidence including:
+
+* Go version
+* executable path
+* module path
+* files created/modified
+* production dependencies
+* test result
+* vet result
+* build result
+* health smoke-test result
+* TASK-GO-001 status
+* confirmation that no calculator behavior was implemented
+* confirmation that no third-party production dependency was introduced
+
+Report:
+
+* `git diff --stat`
+* `git status`
+* remaining work
+* any deviation from approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-001.
+```
+
+### Outcome
+
+Resumed the previously blocked `TASK-GO-001` after confirming `go version go1.26.5 linux/amd64` at `/usr/local/go/bin/go`. Created module `github.com/maiandreh/fullstack-calculator-double-backend/backend-go` with `backend-go/go.mod`, `backend-go/cmd/server/main.go`, and `backend-go/cmd/server/main_test.go`; modified `TASKS.md` to mark only `TASK-GO-001` complete and modified this audit file to record P007-R2. Production uses only the Go standard library (`net/http`, standard JSON/configuration/logging packages); `go list -m all` listed only the module itself. `gofmt -w .` completed. With `GOCACHE=/tmp/fullstack-calculator-go-cache` because the sandbox home cache is read-only, `go test ./...` passed (`cmd/server`, 0.004s), `go vet ./...` passed, and `go build ./...` passed; the generated untracked `backend-go/server` binary was removed afterward. The service started on default port `8080`; `curl -i http://localhost:8080/health` returned `HTTP/1.1 200 OK`, `Content-Type: application/json`, and `{"status":"ok"}`, after which the service was stopped. `TASK-GO-001` is complete, and every later task remains unchanged. No calculator endpoint, expression parsing, calculator operations, calculator DTOs, calculator error mapping, frontend, Java, Docker, or parity tooling was implemented. No third-party production dependency was introduced. There was no deviation from the approved requirements, scope, specification, design, ADR-001, or TASK-GO-001; only sandbox-specific writable-cache and localhost permissions were needed for verification.

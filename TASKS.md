@@ -31,7 +31,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Create `backend-go/`, a module using a currently supported installed Go release, standard-library-only production dependencies, a minimal entry point, default port `8080` configuration, and repository/build hygiene. Do not add parser behavior.
 - **Verification required:** Compile; baseline `go test ./...`; `gofmt`; `go vet ./...`; inspect dependencies and changed files.
 - **Definition of Done:** Module builds; baseline toolchain commands pass; formatting is clean; no unrelated functionality or non-standard production dependency exists.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-002 — Implement lexical and parser foundation
 
