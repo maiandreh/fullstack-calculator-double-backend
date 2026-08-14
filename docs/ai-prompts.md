@@ -2212,3 +2212,658 @@ Stop and wait for human review.
 ### Outcome
 
 Created `DESIGN.md` and five accepted ADRs under `docs/decisions/`; modified `SCOPE.md` and `docs/ai-prompts.md`; `AGENTS.md` required no change because it already defines `DESIGN.md` authority. Selected a primary Go backend using standard `net/http`, a secondary Java 21 backend using Spring Boot, Maven, Spring Web, JUnit 5, MockMvc, and JaCoCo, and a React/TypeScript/Vite frontend using native `fetch`, local state, Vitest, React Testing Library, and `user-event` where useful. Selected independent small custom bounded parsers conforming to `SPEC.md`, with specification and parity fixtures shared but no runtime source sharing or third-party expression library. Promoted Docker from optional assessment provenance to committed project delivery scope with three containers and root Compose planned. Created ADRs for the primary Go backend, parser strategy, secondary Java backend, frontend stack, and containerized delivery. Rejected unnecessary Go HTTP frameworks, third-party expression libraries, frontend evaluation, a single-backend delivery, Axios/global state libraries, and native-only delivery for the documented reasons. No application source code, dependency manifest, build configuration, Dockerfile, Compose file, or build project was created or initialized.
+
+## P006
+
+### Prompt ID
+
+P006
+
+### Phase
+
+Implementation Planning
+
+### Objective
+
+Translate the approved requirements, committed scope, behavioral specification, acceptance criteria, and architecture into a small, ordered, traceable implementation plan.
+
+### Prompt
+
+```text
+Prompt ID: P006
+
+Phase: Implementation Planning
+
+Objective:
+Translate the approved requirements, committed scope, behavioral specification, acceptance criteria, and architecture into a small, ordered, traceable implementation plan.
+
+This is the final planning gate before implementation begins.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read all accepted ADRs under `docs/decisions/`.
+7. Read `docs/ai-prompts.md`.
+8. Record this exact prompt as `P006` in `docs/ai-prompts.md` before modifying any other repository file.
+
+Create only:
+
+* `TASKS.md`
+
+Update only:
+
+* `docs/ai-prompts.md` with P006 and its factual Outcome.
+* `AGENTS.md` only if needed to clarify task execution/traceability rules already established.
+
+Do NOT initialize Go.
+Do NOT initialize Java.
+Do NOT initialize React/npm.
+Do NOT create Dockerfiles.
+Do NOT implement application code.
+Do NOT create tests yet.
+Do NOT modify behavioral requirements or architecture decisions.
+
+# 1. Planning principles
+
+The implementation plan must:
+
+* be incremental
+* keep commits reviewable
+* make each task small enough for focused human review
+* map work to approved specification/acceptance criteria
+* avoid parallel implementation where earlier behavior should establish a reference
+* prioritize correctness before presentation polish
+* avoid speculative work
+* respect the assessment's approximately 2–4 hour scope guidance
+* explicitly distinguish required delivery work from project extensions
+
+Do not create one task per source file.
+
+Tasks represent coherent engineering increments.
+
+# 2. Task identifiers
+
+Use stable task identifiers grouped by phase:
+
+* `TASK-GO-###`
+* `TASK-FE-###`
+* `TASK-JAVA-###`
+* `TASK-PAR-###`
+* `TASK-DOCKER-###`
+* `TASK-DOC-###`
+* `TASK-FINAL-###`
+
+Each task must include:
+
+* ID
+* Objective
+* Dependencies
+* Requirement/specification references
+* Acceptance criteria covered
+* Implementation scope
+* Verification required
+* Definition of Done
+* Status
+
+Initial status for every task:
+
+`Not Started`
+
+Do not invent test-case IDs yet unless an accepted artifact already defines them.
+
+# 3. Phase 1 — Go project bootstrap
+
+Create a task for initializing the primary backend.
+
+It must cover:
+
+* Go module under `backend-go/`
+* currently supported Go release available in the development environment
+* standard-library-only production dependencies unless a later demonstrated need arises
+* basic application entry point
+* configuration for default port `8080`
+* repository/build hygiene
+* initial compile/test verification
+
+Do not combine expression-parser implementation into the bootstrap task.
+
+Definition of Done must require:
+
+* module builds
+* baseline tests/toolchain command runs
+* `gofmt`
+* `go vet`
+* no unrelated functionality
+
+# 4. Phase 2 — Go expression domain
+
+Break the domain implementation into coherent increments.
+
+At minimum plan tasks covering:
+
+## Core lexical/parser foundation
+
+Support the approved expression grammar foundation:
+
+* decimal literals
+* whitespace
+* parentheses
+* expression length handling at the appropriate boundary
+* complete input consumption
+* invalid syntax detection
+
+## Basic arithmetic
+
+* addition
+* subtraction
+* multiplication
+* division
+* conventional precedence
+* left associativity where specified
+* division by zero
+
+## Unary and exponentiation semantics
+
+* unary plus
+* unary minus
+* exponentiation
+* right associativity
+* SPEC-defined interaction:
+
+`-2 ^ 2 = -4`
+
+`(-2) ^ 2 = 4`
+
+## Percentage and square root
+
+* postfix percentage
+* compositional percentage semantics
+* `sqrt(...)`
+* compound square-root argument
+* invalid real-number domain handling
+
+## Finite-result enforcement
+
+* reject NaN
+* reject positive/negative infinity
+* map mathematically unsupported outcomes into approved domain errors
+
+These may be separate tasks if doing so improves reviewability.
+
+Every domain task must derive verification from relevant `AC-EXPR-*` / `AC-ERR-*` criteria.
+
+Parser/domain verification must not require HTTP.
+
+# 5. Phase 3 — Go REST API
+
+Create separate tasks for transport behavior.
+
+Cover:
+
+* `POST /api/calculate`
+* JSON request decoding
+* request validation
+* expression length requirement
+* successful JSON response
+* application error mapping
+* canonical error codes/messages
+* malformed JSON
+* CORS needed for local frontend development
+
+Keep HTTP concerns separate from expression evaluation.
+
+Verification must include focused HTTP contract tests based on `AC-API-*` and relevant `AC-ERR-*`.
+
+Do not duplicate every parser behavior through HTTP if it is already sufficiently covered at domain level.
+
+# 6. Phase 4 — Go quality verification
+
+Create a task that completes the Go backend quality gate.
+
+Require:
+
+* `gofmt`
+* `go vet`
+* full Go test suite
+* Go coverage report
+* review against all Go-relevant acceptance criteria
+* manual smoke request against the running backend
+
+Definition of Done must explicitly state that no known committed Go/backend acceptance criterion remains uncovered.
+
+# 7. Phase 5 — Frontend bootstrap
+
+Create a task for:
+
+* React
+* TypeScript
+* Vite
+* approved testing stack
+* minimal app shell
+* backend configuration mechanism
+* development/build scripts
+* baseline test/build verification
+
+Do not implement the full calculator UI in the bootstrap task.
+
+# 8. Phase 6 — Frontend calculator interaction
+
+Plan focused tasks covering:
+
+## Display and expression state
+
+* expression display
+* result display
+* error display
+* no frontend calculation engine
+
+## Keypad
+
+Controls for:
+
+* digits
+* decimal
+* arithmetic operators
+* exponentiation
+* percentage
+* square root
+* parentheses
+* clear
+* equals
+* backspace where represented through UI if approved
+
+Presentation symbols may differ from canonical transport tokens.
+
+## Keyboard
+
+Implement only the keyboard behavior required by `SPEC.md`.
+
+Do not create arbitrary free-form expression editing beyond the approved behavior.
+
+## Responsive behavior
+
+Implement mobile-first calculator usability and representative desktop behavior.
+
+Do not introduce visual features unrelated to acceptance criteria.
+
+# 9. Phase 7 — Frontend API integration
+
+Create a separate task for REST communication.
+
+Cover:
+
+* native `fetch`
+* canonical expression transport
+* selected-backend URL resolution
+* success result handling
+* application error handling
+* connectivity errors
+* stale-result handling
+* duplicate-submit prevention
+* no request for empty expression
+
+The frontend must not calculate results independently.
+
+# 10. Phase 8 — Frontend tests and quality
+
+Plan tests deriving from relevant `AC-UI-*` and API-facing criteria.
+
+Cover at minimum:
+
+* keypad input
+* keyboard input
+* clear/reset
+* backspace
+* evaluate
+* result
+* backend error
+* connectivity error
+* stale result removal
+* duplicate submission prevention
+* backend selection
+* empty-expression behavior
+* canonical request payload
+* responsive usability verification at a practical level
+
+Require:
+
+* Vitest suite
+* coverage report
+* TypeScript/build verification
+
+Do not use snapshot tests as the primary behavior verification method.
+
+# 11. Phase 9 — Java project bootstrap
+
+Create a task for:
+
+* `backend-java/`
+* Java 21
+* Spring Boot
+* Maven
+* Maven Wrapper
+* Spring Web
+* Spring Boot Test
+* JaCoCo
+* port `8081`
+
+No Lombok.
+
+Do not implement parser/domain behavior in the bootstrap task.
+
+# 12. Phase 10 — Java expression domain
+
+Plan Java domain tasks mirroring the behavior covered by the Go implementation, not necessarily its source structure.
+
+Java must independently implement the same `SPEC.md`.
+
+Plan equivalent domain verification for:
+
+* grammar
+* arithmetic
+* precedence
+* unary semantics
+* right-associative exponentiation
+* postfix percentage
+* square root
+* invalid domain
+* division by zero
+* non-finite result
+
+Do not copy Go implementation patterns where they are non-idiomatic in Java.
+
+Do not add unnecessary service interfaces, factories, strategies, or parser frameworks.
+
+# 13. Phase 11 — Java REST API
+
+Plan:
+
+* shared REST contract
+* JSON validation
+* error mapping
+* CORS
+* focused MockMvc contract tests
+
+Java observable behavior must match the specification, not the Go implementation's incidental details.
+
+# 14. Phase 12 — Java quality verification
+
+Require:
+
+* Maven test lifecycle
+* build
+* JaCoCo report
+* all relevant acceptance criteria
+* manual smoke request
+
+Definition of Done must explicitly state that no known committed Java/backend acceptance criterion remains uncovered.
+
+# 15. Phase 13 — Cross-backend parity
+
+This is a distinct project-extension phase.
+
+Plan a small repository-level parity mechanism.
+
+Prefer:
+
+* a lightweight script or test fixture
+* a shared dataset of HTTP requests and expected contract behavior
+* live Go and Java backends
+
+Do not introduce Pact or another heavyweight contract framework.
+
+Cover representative `AC-PAR-*` criteria including:
+
+* basic arithmetic
+* compound precedence
+* exponentiation
+* square root or percentage
+* division by zero
+* invalid grammar
+* invalid domain
+* non-finite result
+
+Verify:
+
+* status parity
+* response-schema parity
+* canonical error parity
+* numeric parity tolerance from `SPEC.md`
+
+The parity mechanism should test behavior, not implementation internals.
+
+# 16. Phase 14 — Docker
+
+Plan committed Docker delivery.
+
+Include:
+
+* Go backend Dockerfile
+* Java backend Dockerfile
+* frontend Dockerfile
+* root Compose configuration
+
+Compose must run:
+
+* frontend
+* Go backend
+* Java backend
+
+Do not introduce:
+
+* Kubernetes
+* reverse-proxy infrastructure unless concretely necessary
+* service discovery tooling
+* production orchestration
+
+Verification must include successful container builds and full-stack startup.
+
+# 17. Phase 15 — Documentation
+
+Create documentation tasks covering all assessment deliverables.
+
+README must include:
+
+* project overview
+* architecture summary
+* prerequisites
+* native setup
+* running Go backend
+* running Java backend
+* running frontend
+* Docker/Compose startup
+* API contract
+* API examples
+* testing commands
+* coverage commands
+* design rationale
+* two-backend extension rationale
+* explicit note that Go is the primary assessment-aligned backend
+* trade-offs
+* known scope boundaries
+* AI usage/prompt disclosure link
+
+Do not duplicate the complete specification or ADR content in README.
+
+Link to detailed artifacts where appropriate.
+
+# 18. AI prompt disclosure
+
+Plan a final verification task for `docs/ai-prompts.md`.
+
+The prompt audit trail must contain the prompts relevant to the submitted implementation.
+
+Do not rewrite historical prompts.
+
+Ensure outcomes are factual and complete.
+
+# 19. Final quality gate
+
+Create a final task that must happen before submission.
+
+It must verify:
+
+## Repository hygiene
+
+* clean working tree
+* no build artifacts tracked
+* no `.idea`
+* no `node_modules`
+* no generated coverage directories
+* no secrets
+* no unexpected environment files
+
+## Go
+
+* format
+* vet
+* tests
+* coverage
+* build
+
+## Java
+
+* tests
+* coverage
+* build
+
+## Frontend
+
+* tests
+* coverage
+* build
+
+## Integration
+
+* Go smoke test
+* Java smoke test
+* frontend → Go
+* frontend → Java
+* backend switching
+* parity suite
+
+## Docker
+
+* image builds
+* Compose starts full system
+* calculator works through both backend choices
+
+## Documentation
+
+* README instructions validated from a clean setup perspective
+* API examples exercised
+* prompts disclosed
+* required deliverables present
+
+## Traceability
+
+Confirm every committed requirement maps through:
+
+Requirement
+→ Specification
+→ Acceptance Criterion
+→ Implementation Task
+→ Verification evidence
+
+Identify any intentional exceptions explicitly.
+
+# 20. Commit boundaries
+
+TASKS.md may recommend commit boundaries, but must not perform commits.
+
+Recommend cohesive commits similar in intent to:
+
+* Go bootstrap
+* Go calculator domain
+* Go REST API
+* frontend calculator interaction
+* frontend API integration
+* Java compatible backend
+* parity verification
+* Docker delivery
+* final documentation
+
+Do not require one commit per task if several tiny tasks form one coherent, verified increment.
+
+Do not include commit hashes because no implementation commits exist yet.
+
+# 21. TASKS.md structure
+
+Use:
+
+1. Purpose
+2. Execution Rules
+3. Traceability Convention
+4. Go Backend
+5. Frontend
+6. Java Backend
+7. Cross-Backend Parity
+8. Docker
+9. Documentation
+10. Final Submission Gate
+11. Recommended Commit Boundaries
+12. Coverage of Committed Requirements
+
+At the end, include a compact matrix:
+
+| Requirement / Scope | Specification | Acceptance Criteria | Planned Task(s) |
+
+This matrix must demonstrate that every committed capability has planned implementation/verification coverage.
+
+Do not falsely map requirements that are not implemented by a specific task.
+
+# 22. Plan granularity
+
+Aim for a practical plan.
+
+Do not create dozens of microtasks merely to maximize traceability.
+
+Prefer approximately 15–25 meaningful implementation tasks total.
+
+If the plan exceeds 30 implementation tasks, simplify it unless there is a strong reason.
+
+Remember the assessment expects approximately 2–4 hours.
+
+# 23. Prompt outcome
+
+After completing TASKS.md, update P006 Outcome with:
+
+* files created
+* files modified
+* task count by phase
+* total task count
+* implementation order
+* confirmation that committed requirements have planned coverage
+* confirmation that no implementation was performed
+
+Keep the outcome factual.
+
+# Verification
+
+After completing the phase:
+
+1. Show complete `TASKS.md`.
+2. Show P006 from `docs/ai-prompts.md`.
+3. Show `git diff --stat`.
+4. Show `git status`.
+5. Report number of tasks by task-prefix.
+6. Report total number of tasks.
+7. Confirm every committed calculator operation maps to implementation and verification work.
+8. Confirm frontend, both backends, parity, Docker, documentation, and final verification are planned.
+9. Identify any acceptance criterion without a planned verification path.
+10. Identify any planned task not traceable to an approved requirement, scope extension, specification, architecture decision, or delivery need.
+11. Confirm no application code, dependency manifest, Dockerfile, Compose file, or build project was created.
+
+Do not commit.
+Do not push.
+
+Stop and wait for human review.
+```
+
+### Outcome
+
+Created `TASKS.md` and modified `docs/ai-prompts.md`; `AGENTS.md` required no change. The plan contains 8 Go tasks, 5 frontend tasks, 6 Java tasks, 1 cross-backend parity task, 1 Docker task, 2 documentation tasks, and 1 final-submission task, for 24 tasks total. The ordered implementation establishes and verifies the primary Go backend first, then the frontend, independent Java compatibility backend, live parity, container delivery, documentation, prompt disclosure, and the final quality gate. The traceability matrix plans implementation and verification coverage for every committed calculator operation, frontend behavior, both backend contracts, parity extension, Docker commitment, quality/coverage requirement, and documentation deliverable. No application code, tests, dependency manifest, Dockerfile, Compose file, build configuration, or build project was created or initialized.
