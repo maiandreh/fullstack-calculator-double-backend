@@ -50,6 +50,7 @@ func TestEvaluatePrecedenceGroupingAndAssociativity(t *testing.T) {
 		"division before subtraction":           {expression: "10 - 8 / 4", want: 8},
 		"left-associative subtraction":          {expression: "10 - 3 - 2", want: 5},
 		"left-associative division":             {expression: "20 / 5 / 2", want: 2},
+		"acceptance left-associative division":  {expression: "8 / 4 / 2", want: 1},
 		"left-associative mixed multiplication": {expression: "8 / 4 * 2", want: 4},
 	}
 
@@ -75,6 +76,7 @@ func TestEvaluateUnaryAndExponentiation(t *testing.T) {
 		"unary positive":                   {expression: "+2", want: 2},
 		"signed multiplicative operand":    {expression: "3 * -2", want: -6},
 		"simple exponentiation":            {expression: "2 ^ 3", want: 8},
+		"acceptance exponentiation":        {expression: "2 ^ 8", want: 256},
 		"zero exponent":                    {expression: "5 ^ 0", want: 1},
 		"decimal exponent result":          {expression: "9 ^ 0.5", want: 3},
 		"right-associative exponentiation": {expression: "2 ^ 3 ^ 2", want: 512},

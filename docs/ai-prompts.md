@@ -5542,3 +5542,417 @@ Stop after TASK-GO-007 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-007`. Created `backend-go/cmd/server/calculator.go` for the transport-only calculator request, success response, and error response DTOs; strict single-value JSON decoding with unknown-field rejection; `application/json` media-type validation; canonical domain-error mapping; JSON response writing; and an explicit local-development CORS allowlist for `http://localhost:5173` with POST/Content-Type preflight support. Created `backend-go/cmd/server/calculator_test.go` with focused `httptest` coverage for the exact success envelope, numeric result, missing/null/non-string/empty/whitespace/overlength expressions, malformed and trailing JSON, unknown fields, every canonical domain error, unsupported media type, allowed/disallowed origins, and preflight behavior. Modified `backend-go/cmd/server/main.go` to register method-aware `POST /api/calculate` and `OPTIONS /api/calculate` routes while preserving `GET /health`; modified only TASK-GO-007 in `TASKS.md` to Complete; and recorded P013 and this outcome in `docs/ai-prompts.md`. The handler passes only the decoded expression string to the existing transport-independent evaluator; no calculation semantics moved into HTTP and the domain package was unchanged. All 148 Go test cases/subtests passed. With `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .`, `go test ./...`, `go vet ./...`, and `go build ./...` completed successfully with exit code 0. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`, confirming no third-party production dependency. Manual smoke tests against the running port-8080 service returned HTTP 200 with `{"result":20}` for `(2 + 3) * 4`, HTTP 400 with the canonical `DIVISION_BY_ZERO` response for `1 / 0`, and HTTP 400 with the canonical `INVALID_EXPRESSION` response for `2 +`; the service was stopped afterward. TASK-GO-007 is Complete and TASK-GO-008 and later remain unchanged. Frontend, Java, Docker, cross-backend parity tooling, and later Go quality-gate work were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-001, ADR-002, or TASKS.md.
+
+## P014
+
+### Prompt ID
+
+P014
+
+### Phase
+
+Verification — Go Backend Quality Gate
+
+### Objective
+
+Execute only `TASK-GO-008` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, and smoke verification of the Go backend and fix only demonstrated gaps within the already approved specification.
+
+### Prompt
+
+```text
+Prompt ID: P014
+
+Phase: Verification — Go Backend Quality Gate
+
+Objective:
+Execute only `TASK-GO-008` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, and smoke verification of the Go backend and fix only demonstrated gaps within the already approved specification.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-001 and ADR-002.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P014` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-GO-008 — Complete Go quality gate`
+
+Do NOT:
+
+* add new calculator features
+* expand expression syntax
+* modify the approved API contract
+* implement frontend
+* implement Java
+* implement Docker
+* implement parity tooling
+* alter approved requirements, scope, specification, design, or ADRs
+
+If verification exposes a conflict with an approved artifact, stop and report it rather than silently redefining behavior.
+
+## 1. Acceptance review
+
+Review all Go-relevant acceptance criteria in `SPEC.md`.
+
+At minimum, verify coverage for:
+
+* all `AC-EXPR-*`
+* all `AC-API-*`
+* all `AC-ERR-*`
+
+Create a compact checklist in the P014 report showing each acceptance criterion or grouped criterion range and the concrete verification path that proves it.
+
+Do not claim acceptance coverage without a corresponding test or explicit smoke verification.
+
+## 2. Gap policy
+
+If a committed acceptance criterion is not currently covered:
+
+* add the smallest necessary test and/or implementation correction
+* do not broaden scope
+* do not refactor unrelated code
+* do not introduce new dependencies unless explicitly approved
+
+If behavior already satisfies the criterion but lacks a test, prefer adding the missing test.
+
+If implementation behavior contradicts `SPEC.md`, fix the implementation.
+
+Do not change `SPEC.md` to accommodate existing code.
+
+## 3. Formatting and static verification
+
+Run:
+
+`gofmt -w .`
+
+Then verify no formatting drift remains.
+
+Run:
+
+`go vet ./...`
+
+Any vet failure must be resolved before this task is complete.
+
+Do not suppress valid vet findings merely to pass the gate.
+
+## 4. Full test suite
+
+Run the complete Go test suite.
+
+Use:
+
+`go test ./...`
+
+Also run a verbose form if useful for reporting:
+
+`go test -v ./...`
+
+Report:
+
+* packages tested
+* total tests where practical
+* failures
+* skipped tests
+* final result
+
+No failing committed-behavior test may remain.
+
+## 5. Coverage
+
+Generate Go coverage evidence using built-in tooling.
+
+Use an appropriate command such as:
+
+`go test -coverprofile=coverage.out ./...`
+
+Then inspect:
+
+`go tool cover -func=coverage.out`
+
+Report:
+
+* total statement coverage
+* relevant package-level coverage where useful
+* notable uncovered areas
+
+Do not create an arbitrary coverage threshold.
+
+Coverage is supporting evidence, not the objective.
+
+The generated coverage artifact must remain ignored by Git.
+
+If coverage output appears in `git status`, fix repository hygiene rather than commit the generated report.
+
+## 6. Build verification
+
+Run:
+
+`go build ./...`
+
+The backend must build successfully with the approved Go toolchain.
+
+Do not leave generated binaries tracked.
+
+## 7. Dependency verification
+
+Run:
+
+`go list -m all`
+
+Confirm the production dependency graph still uses only the Go standard library, aside from the module itself.
+
+If any unexpected module appears, investigate and report it.
+
+Do not add dependencies during this gate unless a concrete approved requirement proves they are necessary.
+
+## 8. Live smoke verification
+
+Start the Go backend on the default local port.
+
+Verify at minimum:
+
+### Health
+
+`GET /health`
+
+Expected:
+
+* HTTP 200
+* expected health JSON
+
+### Basic calculation
+
+`POST /api/calculate`
+
+Request:
+
+```json
+{
+  "expression": "2 + 3 * 4"
+}
+```
+
+Expected:
+
+* HTTP 200
+* result `14`
+
+### Advanced calculation
+
+Use at least one committed advanced expression, for example:
+
+```json
+{
+  "expression": "sqrt(81) + 150 * 20%"
+}
+```
+
+Verify the result according to `SPEC.md`.
+
+### Exponentiation semantics
+
+Verify:
+
+`2 ^ 3 ^ 2`
+
+returns:
+
+`512`
+
+### Unary/exponent precedence
+
+Verify:
+
+`-2 ^ 2`
+
+returns:
+
+`-4`
+
+and:
+
+`(-2) ^ 2`
+
+returns:
+
+`4`
+
+### Division by zero
+
+Verify canonical `DIVISION_BY_ZERO`.
+
+### Invalid grammar
+
+Verify canonical `INVALID_EXPRESSION`.
+
+### Invalid domain
+
+Verify canonical `INVALID_DOMAIN`.
+
+### Non-finite result
+
+Verify canonical `NON_FINITE_RESULT` using a deterministic expression already supported by tests.
+
+Stop the server after smoke verification.
+
+## 9. HTTP contract review
+
+Review the live/httptest behavior for:
+
+* POST-only calculator contract
+* JSON request decoding
+* result schema
+* error schema
+* canonical error codes/messages
+* HTTP statuses
+* unsupported media type status
+* CORS needed by the future Vite frontend
+* safe unexpected-error behavior
+
+Do not over-test framework/server behaviors outside the approved calculator contract.
+
+## 10. Domain/transport separation review
+
+Inspect the Go implementation and confirm:
+
+* parser/evaluator has no dependency on `net/http`
+* HTTP handlers do not implement calculator semantics
+* domain errors are mapped at the transport boundary
+* no raw parser/internal diagnostics leak into API responses
+* `/health` remains infrastructure-only
+
+If this separation has regressed, make only the smallest correction needed.
+
+## 11. Architecture discipline review
+
+Confirm the Go implementation still satisfies approved architecture:
+
+* standard-library HTTP stack
+* no third-party expression evaluator
+* no parser generator
+* no speculative service/repository layers
+* no unnecessary interfaces
+* no frontend calculation engine
+* no unrelated infrastructure
+
+Report any deviation.
+
+## 12. Repository hygiene
+
+After all verification commands, inspect:
+
+`git status --short`
+
+Confirm generated outputs such as:
+
+* coverage files
+* binaries
+* temporary test artifacts
+
+are ignored/untracked appropriately.
+
+Do not commit generated verification output.
+
+If `.gitignore` needs a concrete correction for a generated Go artifact, make the smallest necessary change and explain it.
+
+## 13. TASK-GO-008 status
+
+Mark `TASK-GO-008` Complete only if:
+
+* all Go-relevant acceptance criteria have a verification path
+* full test suite passes
+* gofmt is clean
+* `go vet` passes
+* build passes
+* coverage evidence is generated
+* live smoke tests pass
+* no known committed Go/backend acceptance gap remains
+
+Do not modify frontend, Java, parity, Docker, documentation, or final-task statuses.
+
+## 14. Prompt audit outcome
+
+Update the P014 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-008 status
+* files modified, if any
+* acceptance gaps found/fixed
+* test commands/results
+* coverage command and total result
+* vet result
+* build result
+* dependency result
+* smoke-test results
+* architecture/separation review result
+* repository-hygiene result
+* confirmation that no new feature was introduced
+* confirmation that no frontend, Java, Docker, or parity implementation was started
+
+Do not rewrite previous prompts or outcomes.
+
+## 15. Required final report
+
+Report:
+
+1. acceptance-criteria coverage summary
+2. files modified during the quality gate
+3. gaps found and fixes made
+4. `gofmt` result
+5. `go test ./...` result
+6. coverage result
+7. `go vet ./...` result
+8. `go build ./...` result
+9. `go list -m all` result
+10. health smoke result
+11. basic-expression smoke result
+12. advanced-expression smoke result
+13. exponentiation smoke result
+14. unary/exponent precedence smoke result
+15. division-by-zero smoke result
+16. invalid-expression smoke result
+17. invalid-domain smoke result
+18. non-finite-result smoke result
+19. domain/transport separation review
+20. dependency/architecture review
+21. `git diff --stat`
+22. `git status`
+23. TASK-GO-008 final status
+24. remaining work beginning with TASK-FE-001
+25. any unresolved deviation/conflict
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-008 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-008`. The acceptance review found no implementation defect or specification conflict, but found four verification-evidence gaps: the exact AC-EXPR-006 `2 ^ 8` fixture, the exact AC-EXPR-019 `8 / 4 / 2` fixture, HTTP-level AC-EXPR-017 canonical-versus-presentation-token behavior, and HTTP-level AC-ERR-001/004/005 cases for negative zero, `sin(1)`, and `1e3`. Added only those focused tests in `backend-go/internal/expression/evaluator_test.go` and `backend-go/cmd/server/calculator_test.go`; no production code or behavior changed. Modified `TASKS.md` to mark only TASK-GO-008 Complete and recorded P014 and this outcome in `docs/ai-prompts.md`.
+
+Acceptance evidence checklist:
+
+- AC-EXPR-001–005: `TestEvaluateBasicArithmetic` covers the four basic operations and binary64 decimal addition.
+- AC-EXPR-006–007: `TestEvaluateUnaryAndExponentiation` covers `2 ^ 8 = 256` and right-associative `2 ^ 3 ^ 2 = 512`.
+- AC-EXPR-008–011 and 016: `TestEvaluatePercentageAndSquareRoot` covers both square-root fixtures and all specified percentage results.
+- AC-EXPR-012–015 and 019: `TestEvaluatePrecedenceGroupingAndAssociativity` and `TestEvaluateUnaryAndExponentiation` cover precedence, grouping, signed multiplication, both unary/power fixtures, and exact left-associative `8 / 4 / 2 = 1`.
+- AC-EXPR-017: `TestCalculateEnforcesCanonicalTransportTokens` proves HTTP acceptance of `2 * 3 = 6` and rejection of `2 × 3`.
+- AC-EXPR-018: `TestParseAcceptsApprovedSyntaxFoundation` and `TestParseRejectsInvalidSyntax` cover every listed valid and invalid literal.
+- AC-EXPR-020: `TestParseEnforcesSubmittedExpressionBoundary` proves a syntactically valid 256-character expression is accepted.
+- AC-API-001–002: `TestCalculateSuccess` proves POST JSON, HTTP 200, exact one-member response, and numeric result 20.
+- AC-API-003: `TestCalculateRejectsUnsupportedMediaType` proves HTTP 415 for `text/plain`.
+- AC-ERR-001–005 and 011: `TestCalculateMapsDomainErrors` proves positive/negative-zero division, negative square root, trailing syntax, unsupported function, scientific notation, and non-finite overflow with exact HTTP 400 codes/messages.
+- AC-ERR-006–010: `TestCalculateRejectsInvalidRequests` proves whitespace, missing/null/non-string, 257-character, and malformed JSON requests with the exact canonical response.
+- AC-ERR-012: `assertAPIError` verifies the string `code`/`message` envelope and application/json content type across every application-defined error category.
+
+With `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .` completed and `gofmt -d .` showed no formatting drift. `go test ./...` and `go test -count=1 -v ./...` passed for `cmd/server` and `internal/expression`; 154 test cases/subtests passed, none failed, and none were skipped. `go test -count=1 -coverprofile=coverage.out ./...` passed with package statement coverage of 80.3% for `cmd/server` and 98.3% for `internal/expression`; `go tool cover -func=coverage.out` reported 93.4% total statement coverage. Notable uncovered code is primarily the real listening `main` function and defensive response-write/unexpected-error branches; no arbitrary threshold was imposed. `go vet ./...` and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`, confirming standard-library-only production dependencies.
+
+Live port-8080 smoke verification returned HTTP 200 `{"status":"ok"}` for health; HTTP 200 result 14 for `2 + 3 * 4`; HTTP 200 result 39 for `sqrt(81) + 150 * 20%`; HTTP 200 result 512 for `2 ^ 3 ^ 2`; HTTP 200 results -4 and 4 for `-2 ^ 2` and `(-2) ^ 2`; and exact HTTP 400 canonical responses for `DIVISION_BY_ZERO`, `INVALID_EXPRESSION`, `INVALID_DOMAIN`, and `NON_FINITE_RESULT`. The server was stopped afterward.
+
+Architecture and separation review confirmed the expression package has no `net/http` dependency; handlers delegate calculation to the domain and map sentinel errors only at the transport boundary; responses expose only canonical messages; `/health` remains infrastructure-only; routing, JSON, CORS, and server behavior use the Go standard library; and there is no expression library, parser generator, speculative service/repository/interface layer, frontend calculation engine, or unrelated infrastructure. `coverage.out` is covered by the existing root `.gitignore` and did not appear in Git status; no binary or temporary test artifact was left visible. No new feature was introduced, and no frontend, Java, Docker, or parity implementation was started. TASK-GO-008 is Complete; later tasks remain unchanged. There is no unresolved deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-001, ADR-002, or TASKS.md.

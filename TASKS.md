@@ -108,7 +108,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Fix only gaps found by the Go acceptance review; generate Go coverage evidence and run a live smoke request.
 - **Verification required:** `gofmt`, `go vet ./...`, full `go test ./...`, Go coverage report, build, and manual success/error smoke calls against the running service.
 - **Definition of Done:** All commands pass, evidence is reported, and no known committed Go/backend acceptance criterion remains uncovered.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 5. Frontend
 

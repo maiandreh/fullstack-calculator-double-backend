@@ -28,6 +28,21 @@ func TestCalculateSuccess(t *testing.T) {
 	}
 }
 
+func TestCalculateEnforcesCanonicalTransportTokens(t *testing.T) {
+	canonical := performCalculateRequest(`{"expression":"2 * 3"}`, "application/json", "")
+	if canonical.Code != http.StatusOK {
+		t.Fatalf("canonical status = %d, want %d; body = %s", canonical.Code, http.StatusOK, canonical.Body.String())
+	}
+	var success calculateResponse
+	decodeResponse(t, canonical, &success)
+	if success.Result != 6 {
+		t.Fatalf("canonical result = %v, want 6", success.Result)
+	}
+
+	presentation := performCalculateRequest(`{"expression":"2 × 3"}`, "application/json", "")
+	assertAPIError(t, presentation, http.StatusBadRequest, "INVALID_EXPRESSION", "Expression is invalid")
+}
+
 func TestCalculateRejectsInvalidRequests(t *testing.T) {
 	tests := map[string]string{
 		"missing expression":    `{}`,
@@ -57,7 +72,10 @@ func TestCalculateMapsDomainErrors(t *testing.T) {
 		message    string
 	}{
 		{"invalid expression", "2 +", "INVALID_EXPRESSION", "Expression is invalid"},
+		{"unsupported function", "sin(1)", "INVALID_EXPRESSION", "Expression is invalid"},
+		{"scientific notation", "1e3", "INVALID_EXPRESSION", "Expression is invalid"},
 		{"division by zero", "1 / 0", "DIVISION_BY_ZERO", "Division by zero is not allowed"},
+		{"division by negative zero", "1 / -0", "DIVISION_BY_ZERO", "Division by zero is not allowed"},
 		{"invalid domain", "sqrt(-1)", "INVALID_DOMAIN", "Expression is outside the supported real-number domain"},
 		{"non-finite result", "10 ^ 1000", "NON_FINITE_RESULT", "Expression result is not finite"},
 	}
