@@ -22,9 +22,12 @@ Implementation must not begin until the artifacts required by all preceding phas
 Once created, the following files have these responsibilities and authority:
 
 - `REQUIREMENTS.md` records requirements and their provenance. It distinguishes mandatory assessment requirements, optional assessment requirements, constraints, deliverables, and project-specific extensions.
+- `SCOPE.md` records approved product-scope decisions and project extensions without changing the provenance of source requirements.
 - `SPEC.md` defines externally observable behavior, API contracts, and acceptance criteria. It is the source of truth for behavioral correctness.
 - `DESIGN.md` records the approved technical architecture and important design decisions and trade-offs.
 - `TASKS.md` contains the ordered implementation plan and maps implementation work to approved requirements and specification items where practical.
+
+`REQUIREMENTS.md` answers what the assessment stated. `SCOPE.md` answers what this project has committed to deliver. Future `SPEC.md` answers exactly how that committed behavior is externally observable.
 
 An implementation detail must never silently redefine a requirement or specification. If implementation and specification conflict, stop work and report the conflict for human resolution.
 

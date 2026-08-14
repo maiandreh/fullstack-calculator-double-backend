@@ -480,3 +480,363 @@ Stop and wait for human review.
 ### Outcome
 
 Created `REQUIREMENTS.md` and modified `docs/ai-prompts.md`. The baseline contains 4 mandatory functional requirements, 3 optional functional requirements, 3 frontend requirements, 6 backend requirements, 6 testing and quality requirements, 6 documentation and delivery requirements, and 7 constraints and preferences. It also records that no project extensions are approved, identifies 10 open decisions, and provides source-coverage traceability for all supplied assessment statements. No architecture or implementation decisions were made.
+
+## P003
+
+### Prompt ID
+
+P003
+
+### Phase
+
+Product Scope Decisions
+
+### Objective
+
+Resolve the major product-scope decisions left open by `REQUIREMENTS.md` without selecting implementation technologies or architecture.
+
+### Prompt
+
+```text
+Prompt ID: P003
+
+Phase: Product Scope Decisions
+
+Objective:
+Resolve the major product-scope decisions left open by `REQUIREMENTS.md` without selecting implementation technologies or architecture.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `docs/ai-prompts.md`.
+4. Record this exact prompt as `P003` in `docs/ai-prompts.md` before modifying any other repository file.
+
+Do NOT implement application code.
+Do NOT initialize Go, Java, React, Docker, Maven, npm, or any build system.
+Do NOT choose expression-evaluation libraries.
+Do NOT choose backend frameworks.
+Do NOT create `SPEC.md`, `DESIGN.md`, or `TASKS.md` yet.
+
+Create:
+
+* `SCOPE.md`
+
+Update:
+
+* `AGENTS.md` only as needed to recognize `SCOPE.md` as an approved scope artifact.
+* `docs/ai-prompts.md` with the factual outcome of P003.
+
+Do not rewrite the historical meaning of `REQUIREMENTS.md`.
+
+## 1. Requirement provenance must remain intact
+
+`REQUIREMENTS.md` is the baseline of what the assessment actually states.
+
+The following requirements remain classified as optional at their source:
+
+* `REQ-O-001` — Exponentiation
+* `REQ-O-002` — Square Root
+* `REQ-O-003` — Percentage
+
+Do not change their source classification to mandatory.
+
+However, this project now explicitly promotes all three into the committed delivery scope.
+
+`SCOPE.md` must clearly distinguish:
+
+* source requirement classification
+* project delivery commitment
+
+Therefore:
+
+* Addition is mandatory in the assessment and mandatory in delivery.
+* Subtraction is mandatory in the assessment and mandatory in delivery.
+* Multiplication is mandatory in the assessment and mandatory in delivery.
+* Division is mandatory in the assessment and mandatory in delivery.
+* Exponentiation is optional in the assessment but mandatory in this project's committed delivery scope.
+* Square Root is optional in the assessment but mandatory in this project's committed delivery scope.
+* Percentage is optional in the assessment but mandatory in this project's committed delivery scope.
+
+All seven operations must therefore be delivered by the final solution.
+
+## 2. Product interaction model
+
+Approve an expression-oriented calculator interaction model.
+
+The product should behave like a familiar mobile calculator rather than a form containing independent operand fields.
+
+The user must be able to construct calculations using calculator controls in the interface.
+
+The committed interaction scope includes:
+
+* numeric buttons `0` through `9`
+* decimal separator
+* addition
+* subtraction
+* multiplication
+* division
+* exponentiation
+* square root
+* percentage
+* parentheses
+* clear/reset
+* equals/evaluate
+
+The user should also be able to enter supported expression characters using a physical keyboard on devices where a keyboard is available.
+
+Keyboard input is an additional input mechanism, not a separate calculation model.
+
+The application must not require typing into separate "left operand" and "right operand" fields.
+
+## 3. Expression-based calculation model
+
+Approve a single mathematical expression as the user-visible calculation model.
+
+Illustrative expressions include:
+
+* `12 + 4`
+* `2 * (3 + 4)`
+* `2 ^ 8`
+* `sqrt(81)`
+* `150 * 20%`
+
+These examples communicate intended product behavior but do not yet define the formal API or grammar. Those belong to the behavioral specification phase.
+
+Expressions may combine supported basic operations and parentheses.
+
+The product must support conventional arithmetic precedence.
+
+Parentheses are considered expression syntax, not a new calculator operation.
+
+## 4. Percentage product semantics
+
+Approve percentage as a postfix percentage value.
+
+Conceptually:
+
+`20%` represents `0.20`.
+
+Therefore:
+
+`150 * 20%`
+
+evaluates to:
+
+`30`.
+
+This compositional behavior is preferred over defining percentage as a special binary API operation such as "20 percent of 150".
+
+The later behavioral specification must define this precisely.
+
+## 5. Square-root product semantics
+
+Square root is a unary operation.
+
+Conceptually:
+
+`sqrt(9) = 3`
+
+The final product is limited to real-number results.
+
+Square root of a negative value must therefore be treated as an invalid calculation rather than introducing complex-number support.
+
+Exact observable error behavior is deferred to `SPEC.md`.
+
+## 6. Expression boundaries
+
+Approve a deliberately bounded calculator expression language.
+
+Committed capabilities:
+
+* decimal numeric literals
+* `+`
+* `-`
+* `*`
+* `/`
+* exponentiation
+* square root
+* percentage
+* parentheses
+* conventional arithmetic precedence
+
+Explicitly out of scope:
+
+* trigonometric functions
+* logarithms
+* factorial
+* variables
+* arbitrary user-defined functions
+* constants such as π or e
+* calculator memory registers
+* persistent calculation history
+* complex numbers
+* arbitrary scripting
+* executable expressions
+* server-side code evaluation
+
+The project must not be presented as a complete scientific calculator.
+
+Use the product name/description "Calculator" or equivalent rather than claiming full scientific-calculator functionality.
+
+## 7. Backend responsibility
+
+Approve that mathematical expression evaluation belongs to the backend.
+
+The frontend is responsible for:
+
+* collecting calculator input
+* constructing/displaying the expression
+* submitting the expression
+* displaying the returned result or error
+
+The frontend must not become an independent implementation of the calculation engine.
+
+Minor presentation logic such as formatting button labels does not count as calculation-engine duplication.
+
+The exact REST contract remains unresolved until the behavioral specification phase.
+
+## 8. Multiple backend extension
+
+Approve the following project-specific extension:
+
+The final application will contain two interchangeable backend implementations exposing the same externally observable calculator behavior.
+
+The frontend will allow the user to select which backend implementation processes the calculation.
+
+This extension exists to demonstrate:
+
+* contract-first interoperability
+* separation between frontend behavior and backend technology
+* equivalent behavior across independent implementations
+
+Do NOT select the backend implementation languages in this phase.
+
+The assessment's preference for Go remains recorded in `CON-003` and must be considered during architecture design.
+
+The eventual language choice belongs to the architecture phase.
+
+## 9. Backend parity principle
+
+Approve a product-level parity requirement for the two backend implementations.
+
+For the same valid expression, both backends must produce semantically equivalent results.
+
+For the same invalid expression, both backends must produce semantically equivalent externally observable error behavior.
+
+The exact API structure, HTTP statuses, numeric tolerances, and error schema remain deferred to `SPEC.md`.
+
+## 10. Expression-evaluation implementation decision remains open
+
+Do NOT decide yet whether expression evaluation will use:
+
+* a third-party expression library
+* a standard-library capability
+* a small custom parser/evaluator
+
+Record this as an architecture decision still open.
+
+The future architecture decision must evaluate candidates based on:
+
+* correctness
+* deterministic behavior
+* operator support
+* precedence support
+* percentage semantics
+* square-root behavior
+* input restriction capabilities
+* dependency weight
+* maintainability
+* equivalent behavior across both backend languages
+* suitability for a 2–4 hour technical assessment
+
+A library must not be allowed to redefine the product specification.
+
+Specification drives library selection, not the reverse.
+
+## 11. Docker
+
+Docker remains optional and is not yet promoted into committed delivery scope.
+
+Keep that decision open for the architecture/planning phase.
+
+## 12. SCOPE.md structure
+
+Create `SCOPE.md` with at least:
+
+1. Purpose
+2. Source Requirements vs Delivery Commitments
+3. Committed Calculator Capabilities
+4. User Interaction Model
+5. Expression Model
+6. Percentage Semantics
+7. Square Root Semantics
+8. Backend Responsibility
+9. Approved Project Extensions
+10. Explicitly Excluded Scope
+11. Deferred Architecture Decisions
+12. Resolved Open Decisions
+13. Remaining Open Decisions
+
+Include a compact table mapping the seven calculator requirement IDs to delivery commitment, for example:
+
+| Requirement | Assessment classification | Delivery commitment |
+| ----------- | ------------------------- | ------------------- |
+| REQ-F-001   | Mandatory                 | Committed           |
+| REQ-O-001   | Optional                  | Committed           |
+
+Do not invent implementation identifiers yet.
+
+## 13. Update AGENTS.md
+
+Add `SCOPE.md` to artifact authority.
+
+Its responsibility should be narrowly defined:
+
+`SCOPE.md` records approved product-scope decisions and project extensions without changing the provenance of source requirements.
+
+Define precedence conceptually as:
+
+* `REQUIREMENTS.md` answers what the assessment stated.
+* `SCOPE.md` answers what this project has committed to deliver.
+* future `SPEC.md` answers exactly how that committed behavior is externally observable.
+
+Do not otherwise rewrite unrelated governance rules.
+
+## 14. Prompt outcome
+
+After completing the phase, update P003's Outcome with:
+
+* files created
+* files modified
+* optional requirements promoted into delivery scope
+* project extensions approved
+* major product decisions resolved
+* architecture decisions deliberately left unresolved
+* confirmation that no implementation technology or expression library was selected
+
+Keep it factual.
+
+## Verification
+
+After completing the phase:
+
+1. Show the complete `SCOPE.md`.
+2. Show only the changed section of `AGENTS.md`.
+3. Show the P003 entry from `docs/ai-prompts.md`.
+4. Show `git diff --stat`.
+5. Show `git status`.
+6. List which Open Decisions from `REQUIREMENTS.md` were resolved by this phase.
+7. List which decisions intentionally remain open.
+8. Confirm that no source requirement provenance was changed.
+9. Confirm that no application code or build configuration was created.
+
+Do not commit.
+Do not push.
+
+Stop and wait for human review.
+```
+
+### Outcome
+
+Created `SCOPE.md`; modified `AGENTS.md` and `docs/ai-prompts.md`. Exponentiation (`REQ-O-001`), square root (`REQ-O-002`), and percentage (`REQ-O-003`) remain optional by assessment provenance but were promoted into committed project delivery scope. Approved an expression-oriented calculator, postfix percentage values, unary real-only square root, a bounded expression language, backend-owned evaluation, two user-selectable interchangeable backends, and backend behavioral parity. Deferred the formal API and grammar, numeric rules, exact errors, backend languages and frameworks, expression-evaluation approach, and Docker decision. No implementation technology, backend language, framework, or expression library was selected.
