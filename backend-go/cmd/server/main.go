@@ -50,6 +50,8 @@ func portFromEnvironment() (int, error) {
 func routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health)
+	mux.HandleFunc("POST /api/calculate", calculate)
+	mux.HandleFunc("OPTIONS /api/calculate", calculatePreflight)
 	return mux
 }
 

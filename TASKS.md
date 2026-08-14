@@ -97,7 +97,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** `POST /api/calculate`, strict JSON decoding/validation, expression length validation, exact success envelope, all canonical error mappings/messages/statuses, malformed JSON, safe unexpected failures, and minimal local Vite-origin CORS. Do not move parser logic into handlers.
 - **Verification required:** Focused handler tests for success schema, missing/null/non-string/empty/long expressions, malformed JSON, representative domain-error mapping, CORS, and unsupported-media status behavior without duplicating all domain permutations.
 - **Definition of Done:** Backend A exposes the exact calculator contract on default port `8080`; transport tests pass and leak no internal messages.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-008 — Complete Go quality gate
 

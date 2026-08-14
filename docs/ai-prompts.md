@@ -5035,3 +5035,510 @@ Stop after TASK-GO-006 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-006`. Modified `backend-go/internal/expression/parser.go` to add the transport-independent `ErrNonFiniteResult` category and enforce the finite-success invariant once at the completed evaluator boundary with standard-library `math.IsNaN` and `math.IsInf`; modified `backend-go/internal/expression/evaluator_test.go` with finite-success, overflow, specific-error-precedence, unsupported non-finite syntax, and regression tests; modified `TASKS.md` to mark only TASK-GO-006 complete; and modified `docs/ai-prompts.md` to record P012 and this outcome. No new application file, package, dependency, DTO, or transport layer was created. A successful `Evaluate` call can no longer return NaN or positive/negative infinity. Parser/domain errors occur before the boundary check, so `(10 ^ 1000) / 0` remains `ErrDivisionByZero` and `sqrt(-(10 ^ 1000))` remains `ErrInvalidDomain`; `math.Pow` NaN from an unsupported real exponent such as `(-1) ^ 0.5` is also classified specifically as `ErrInvalidDomain`. Valid exponentiation overflow (`10 ^ 1000`), multiplication overflow (`(10 ^ 200) * (10 ^ 200)`), and negative overflow return `ErrNonFiniteResult`. Textual `NaN`, `Inf`, `Infinity`, and scientific notation remain `ErrInvalidExpression`. The first test run had one failing test because its proposed 200-digit “non-finite literal” fixture is actually the finite value `1e200`; that invalid expectation was corrected into a positive test proving a maximum-length 256-digit literal remains finite, while operation-based overflow tests were retained. After correction, the full suite contains 20 top-level Go tests and 109 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .`, `go test ./...`, `go vet ./...`, and `go build ./...` each completed with exit code 0; tests passed for `cmd/server` and `internal/expression`. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-006 is Complete and TASK-GO-007 and later remain unchanged. The REST calculator API, JSON handling, HTTP error mapping, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.
+
+## P013
+
+### Prompt ID
+
+P013
+
+### Phase
+
+Implementation — Go REST API
+
+### Objective
+
+Execute only `TASK-GO-007` from `TASKS.md`: expose the completed Go calculator domain through the shared REST contract defined in `SPEC.md`, with strict request validation, canonical error mapping, safe JSON handling, and minimal local-development CORS.
+
+### Prompt
+
+```text
+Prompt ID: P013
+
+Phase: Implementation — Go REST API
+
+Objective:
+Execute only `TASK-GO-007` from `TASKS.md`: expose the completed Go calculator domain through the shared REST contract defined in `SPEC.md`, with strict request validation, canonical error mapping, safe JSON handling, and minimal local-development CORS.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-001, ADR-002, and any other ADR directly referenced by `TASK-GO-007`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P013` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-007 — Expose Go REST contract`
+
+Do NOT implement:
+
+* frontend
+* Java
+* Docker
+* cross-backend parity tooling
+* later Go quality-gate-only work beyond what is necessary to verify this task
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the current domain API cannot support the approved REST contract without changing semantics, stop and report the conflict before modifying behavior.
+
+## 1. Calculator endpoint
+
+Implement exactly:
+
+`POST /api/calculate`
+
+Request content type:
+
+`application/json`
+
+Request body:
+
+```json
+{
+  "expression": "(2 + 3) * 4"
+}
+```
+
+Successful response:
+
+HTTP `200`
+
+```json
+{
+  "result": 20
+}
+```
+
+Do not add:
+
+* backend name
+* expression echo
+* timestamp
+* metadata
+* diagnostics
+* tracing fields
+
+The response must contain only the approved success contract.
+
+## 2. Request model
+
+Use a small transport-specific request type equivalent to:
+
+* `expression` as a string
+
+Do not expose transport DTOs inside the parser/domain package.
+
+The HTTP layer must decode the request and pass only the expression value into the domain evaluator.
+
+## 3. Strict JSON decoding
+
+Decode the request deliberately.
+
+Reject malformed JSON.
+
+Reject request bodies that cannot represent the approved calculator request.
+
+Where practical using the standard library, reject unexpected trailing JSON content rather than silently accepting multiple JSON values.
+
+Do not attempt to repair malformed JSON.
+
+Do not log raw untrusted request bodies unnecessarily.
+
+## 4. INVALID_REQUEST behavior
+
+Map the following to the canonical application error:
+
+Code:
+
+`INVALID_REQUEST`
+
+Message:
+
+`A non-empty expression of at most 256 characters is required`
+
+HTTP:
+
+`400`
+
+Include at least:
+
+* missing `expression`
+* `expression: null`
+* `expression` not a string
+* empty string
+* whitespace-only expression
+* expression longer than 256 characters
+* malformed JSON that prevents interpreting the request
+
+Preserve the domain-level length invariant as defense in depth.
+
+Do not create a conflicting transport-only length rule.
+
+## 5. Domain error mapping
+
+Map existing transport-independent domain errors to the exact API contract.
+
+### Invalid expression
+
+HTTP `400`
+
+```json
+{
+  "code": "INVALID_EXPRESSION",
+  "message": "Expression is invalid"
+}
+```
+
+### Division by zero
+
+HTTP `400`
+
+```json
+{
+  "code": "DIVISION_BY_ZERO",
+  "message": "Division by zero is not allowed"
+}
+```
+
+### Invalid real-number domain
+
+HTTP `400`
+
+```json
+{
+  "code": "INVALID_DOMAIN",
+  "message": "Expression is outside the supported real-number domain"
+}
+```
+
+### Non-finite result
+
+HTTP `400`
+
+```json
+{
+  "code": "NON_FINITE_RESULT",
+  "message": "Expression result is not finite"
+}
+```
+
+Do not expose parser error text, Go error strings, math-library diagnostics, stack traces, or implementation details.
+
+## 6. Error response structure
+
+All application-defined calculator errors use exactly:
+
+```json
+{
+  "code": "ERROR_CODE",
+  "message": "Human-readable message"
+}
+```
+
+Set:
+
+`Content-Type: application/json`
+
+for application-defined JSON responses.
+
+Use one small helper for JSON response writing if it improves consistency.
+
+Do not build a generic response framework.
+
+## 7. Unexpected errors
+
+Unexpected internal failures must not expose internal details.
+
+Use a safe HTTP 500 response if an unexpected error genuinely occurs.
+
+Do not create new public calculator error codes outside `SPEC.md`.
+
+Do not leak raw error messages.
+
+Keep logging concise and server-side only.
+
+## 8. Method behavior
+
+The calculator endpoint must accept POST.
+
+Use the method-aware standard-library routing approach approved in architecture where supported by the selected Go toolchain.
+
+Do not introduce a third-party router.
+
+For unsupported methods, standard `net/http` behavior is acceptable unless `SPEC.md` defines something more specific.
+
+Do not invent custom calculator error JSON for unrelated framework/server method behavior.
+
+## 9. Content type
+
+The endpoint consumes JSON.
+
+Unsupported content types may return:
+
+HTTP `415 Unsupported Media Type`
+
+as permitted by `SPEC.md`.
+
+Do not require a custom application error JSON body for 415.
+
+Keep behavior deterministic.
+
+## 10. CORS
+
+Add only the minimal local-development CORS behavior approved by DESIGN.
+
+Allow the expected Vite development origin.
+
+Support the browser preflight needed for POST JSON requests.
+
+Do not:
+
+* allow arbitrary origins in a production-oriented way
+* add credentials unless required
+* add a reverse proxy
+* introduce a CORS dependency
+
+Use standard-library handling.
+
+If configuration is introduced for allowed origin, keep it minimal and explicit.
+
+## 11. Existing health endpoint
+
+Preserve:
+
+`GET /health`
+
+Do not change its existing contract unless a concrete defect is discovered.
+
+Keep calculator and infrastructure endpoints conceptually separate.
+
+## 12. Transport/domain separation
+
+The HTTP layer may:
+
+* validate transport shape
+* decode JSON
+* map domain errors
+* encode JSON
+* handle CORS
+
+The domain layer remains responsible for:
+
+* expression grammar
+* calculation semantics
+* division-by-zero detection
+* domain validity
+* finite-result invariant
+
+Do not move calculation logic into handlers.
+
+Do not make the domain depend on `net/http`.
+
+## 13. HTTP tests
+
+Add focused HTTP-level tests using `net/http/httptest`.
+
+Derive them from `AC-API-*` and applicable `AC-ERR-*`.
+
+Cover at minimum:
+
+### Successful request
+
+* valid POST returns 200
+* response JSON contains `result`
+* result is correct for a representative compound expression
+
+### Request validation
+
+* missing expression
+* null expression
+* non-string expression
+* empty expression
+* whitespace-only expression
+* expression > 256 characters
+* malformed JSON
+
+### Domain error mapping
+
+* invalid grammar
+* division by zero
+* negative square root
+* non-finite result
+
+### HTTP behavior
+
+* content type on calculator JSON responses
+* unsupported media type returns 415 where implemented
+* representative CORS preflight
+* allowed development origin behavior
+
+Do not duplicate the entire domain expression test matrix through HTTP.
+
+## 14. JSON number behavior
+
+Successful results must serialize as finite JSON numbers.
+
+Do not stringify numeric results.
+
+Do not round results merely for presentation.
+
+Do not change the numeric parity semantics defined in SPEC.
+
+## 15. Server wiring
+
+Wire the calculator handler into the existing explicit `http.ServeMux`/server structure.
+
+Keep main/server construction clear and testable.
+
+If necessary, extract a small router/handler construction function so HTTP tests do not need to start a real listening socket.
+
+Do not introduce dependency injection frameworks.
+
+## 16. Existing behavior preservation
+
+Do not regress TASK-GO-001 through TASK-GO-006.
+
+All existing:
+
+* parser tests
+* arithmetic tests
+* exponentiation tests
+* percentage tests
+* square-root tests
+* finite-result tests
+* health tests
+
+must continue passing.
+
+## 17. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Then start the server and manually smoke-test at minimum:
+
+### Success
+
+```bash
+curl -i \
+  -X POST http://localhost:8080/api/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"expression":"(2 + 3) * 4"}'
+```
+
+Expected observable behavior:
+
+* HTTP 200
+* JSON result 20
+
+### Division by zero
+
+```bash
+curl -i \
+  -X POST http://localhost:8080/api/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"expression":"1 / 0"}'
+```
+
+Expected:
+
+* HTTP 400
+* code `DIVISION_BY_ZERO`
+* canonical message
+
+### Invalid syntax
+
+```bash
+curl -i \
+  -X POST http://localhost:8080/api/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"expression":"2 +"}'
+```
+
+Expected:
+
+* HTTP 400
+* code `INVALID_EXPRESSION`
+
+Stop the server after smoke testing.
+
+## 18. Task tracking
+
+Update only:
+
+`TASK-GO-007`
+
+Mark it Complete only if its full Definition of Done is satisfied.
+
+Do not mark TASK-GO-008 complete.
+
+Do not modify later task statuses.
+
+## 19. Prompt audit
+
+Update P013 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-007 execution result
+* files created/modified
+* endpoint implemented
+* request validation implemented
+* domain error mappings implemented
+* CORS behavior implemented
+* HTTP tests and results
+* total Go test result
+* vet result
+* build result
+* dependency result
+* manual smoke-test results
+* task status
+* confirmation that frontend, Java, Docker, and parity tooling were not implemented
+* any deviation from approved artifacts
+
+Do not rewrite prior prompts/outcomes.
+
+## 20. Required report
+
+After implementation show:
+
+1. files created/modified
+2. concise HTTP architecture explanation
+3. request/response DTO definitions
+4. domain-error mapping structure
+5. representative HTTP tests
+6. successful curl result
+7. division-by-zero curl result
+8. invalid-expression curl result
+9. `go test ./...`
+10. `go vet ./...`
+11. `go build ./...`
+12. `go list -m all`
+13. `git diff --stat`
+14. `git status`
+15. remaining work beginning with TASK-GO-008
+16. any deviation/conflict with SPEC, DESIGN, ADRs, or TASKS
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-007 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-007`. Created `backend-go/cmd/server/calculator.go` for the transport-only calculator request, success response, and error response DTOs; strict single-value JSON decoding with unknown-field rejection; `application/json` media-type validation; canonical domain-error mapping; JSON response writing; and an explicit local-development CORS allowlist for `http://localhost:5173` with POST/Content-Type preflight support. Created `backend-go/cmd/server/calculator_test.go` with focused `httptest` coverage for the exact success envelope, numeric result, missing/null/non-string/empty/whitespace/overlength expressions, malformed and trailing JSON, unknown fields, every canonical domain error, unsupported media type, allowed/disallowed origins, and preflight behavior. Modified `backend-go/cmd/server/main.go` to register method-aware `POST /api/calculate` and `OPTIONS /api/calculate` routes while preserving `GET /health`; modified only TASK-GO-007 in `TASKS.md` to Complete; and recorded P013 and this outcome in `docs/ai-prompts.md`. The handler passes only the decoded expression string to the existing transport-independent evaluator; no calculation semantics moved into HTTP and the domain package was unchanged. All 148 Go test cases/subtests passed. With `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .`, `go test ./...`, `go vet ./...`, and `go build ./...` completed successfully with exit code 0. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`, confirming no third-party production dependency. Manual smoke tests against the running port-8080 service returned HTTP 200 with `{"result":20}` for `(2 + 3) * 4`, HTTP 400 with the canonical `DIVISION_BY_ZERO` response for `1 / 0`, and HTTP 400 with the canonical `INVALID_EXPRESSION` response for `2 +`; the service was stopped afterward. TASK-GO-007 is Complete and TASK-GO-008 and later remain unchanged. Frontend, Java, Docker, cross-backend parity tooling, and later Go quality-gate work were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-001, ADR-002, or TASKS.md.
