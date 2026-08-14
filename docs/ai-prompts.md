@@ -3773,3 +3773,316 @@ Stop after TASK-GO-002 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-002`. Created `backend-go/internal/expression/parser.go` and `backend-go/internal/expression/parser_test.go`; modified only `TASKS.md` to mark TASK-GO-002 complete and `docs/ai-prompts.md` to record P008 and this outcome. The domain package exposes `Parse(string) error` and canonical domain sentinels for invalid request boundaries and invalid expression syntax. Internally it uses a rune-aware closed-allowlist lexer and a small recursive-descent recognizer following the approved additive, multiplicative, unary, power, postfix, and primary grammar levels, with complete-input consumption and a 256-Unicode-character boundary. It produces no value and performs no arithmetic. Tests cover approved integer/decimal forms, whitespace, grouping/nesting, every canonical operator structurally, `sqrt(...)` recognition, complete consumption, malformed numbers, scientific/locale/unsupported syntax, split or unsupported identifiers/functions, malformed operators, unbalanced/empty constructs, trailing content, the valid 256-character boundary, overlength input, and Unicode character counting. The full suite contains 8 top-level Go tests and 35 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-002 is Complete and later tasks remain unchanged. No arithmetic evaluation, finite-result behavior, calculator HTTP contract, or `/api/calculate` endpoint was implemented, and the existing health bootstrap was not changed. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.
+
+## P009
+
+### Prompt ID
+
+P009
+
+### Phase
+
+Implementation — Go Core Arithmetic
+
+### Objective
+
+Execute only `TASK-GO-003` from `TASKS.md`: implement the four mandatory arithmetic operations, grouping, precedence, left associativity, and division-by-zero behavior in the Go expression domain.
+
+### Prompt
+
+```text
+Prompt ID: P009
+
+Phase: Implementation — Go Core Arithmetic
+
+Objective:
+Execute only `TASK-GO-003` from `TASKS.md`: implement the four mandatory arithmetic operations, grouping, precedence, left associativity, and division-by-zero behavior in the Go expression domain.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and any other ADR directly referenced by `TASK-GO-003`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P009` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-003 — Implement basic arithmetic and precedence`
+
+Do NOT implement:
+
+* exponentiation
+* unary plus/minus semantics beyond what is strictly required by the already-approved basic grammar foundation
+* percentage
+* square root
+* non-finite-result enforcement beyond what is strictly needed for this task
+* `/api/calculate`
+* HTTP calculator request/response handling
+* frontend
+* Java
+* Docker
+* parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the existing parser foundation conflicts with `SPEC.md`, stop and report the conflict instead of silently changing behavior.
+
+## 1. Arithmetic behavior
+
+Implement:
+
+* addition
+* subtraction
+* multiplication
+* division
+
+Use binary64-equivalent semantics as defined by `SPEC.md`.
+
+The evaluator must operate independently of HTTP.
+
+## 2. Precedence
+
+Implement conventional precedence:
+
+* multiplication and division bind more tightly than addition and subtraction
+* parentheses override default precedence
+
+Required examples include:
+
+`2 + 3 * 4 = 14`
+
+`(2 + 3) * 4 = 20`
+
+`12 / 3 + 2 = 6`
+
+`12 / (3 + 1) = 3`
+
+Do not introduce exponentiation precedence yet.
+
+## 3. Associativity
+
+Binary:
+
+* `+`
+* `-`
+* `*`
+* `/`
+
+must be left-associative.
+
+Required examples include:
+
+`10 - 3 - 2 = 5`
+
+`20 / 5 / 2 = 2`
+
+Do not implement right-associative operators in this task.
+
+## 4. Division by zero
+
+Division by numeric zero must produce the approved domain error category.
+
+Treat both:
+
+`0.0`
+
+and binary64 negative zero
+
+as zero divisors.
+
+Do not return infinity.
+
+Do not convert the error to HTTP here.
+
+The domain error must remain transport-independent.
+
+## 5. Evaluation architecture
+
+Extend the parser foundation created in TASK-GO-002.
+
+Prefer direct evaluation during recursive descent if that remains clear and consistent with DESIGN/ADR-002.
+
+Do not introduce an AST merely because arithmetic now exists unless the current implementation demonstrates a concrete need.
+
+Do not introduce:
+
+* strategy classes/interfaces
+* operator registries
+* visitor patterns
+* expression libraries
+* parser generators
+
+Keep the implementation bounded and idiomatic.
+
+## 6. Invalid syntax preservation
+
+Do not regress syntax rejection implemented by TASK-GO-002.
+
+Previously invalid expressions must remain invalid, including representative cases such as:
+
+* malformed numeric literals
+* unsupported identifiers/functions
+* trailing operators
+* unbalanced parentheses
+* unsupported scientific notation
+* unapproved trailing input
+
+Arithmetic implementation must not make the grammar more permissive.
+
+## 7. Tests
+
+Derive tests from the acceptance criteria listed in TASK-GO-003.
+
+Add direct domain/evaluator tests covering at minimum:
+
+### Addition
+
+* integers
+* decimals
+
+### Subtraction
+
+* integers
+* decimals
+
+### Multiplication
+
+* integers
+* decimals
+
+### Division
+
+* exact division
+* decimal result
+
+### Precedence
+
+* multiplication before addition
+* division before subtraction/addition where applicable
+* grouped expression overriding precedence
+
+### Associativity
+
+* chained subtraction
+* chained division
+
+### Division by zero
+
+* positive zero
+* negative zero if representable through the evaluator entry path
+
+### Regression
+
+* representative syntax-invalid cases from TASK-GO-002 still fail
+
+Prefer table-driven tests when they improve readability.
+
+Do not add HTTP tests.
+
+## 8. Error behavior
+
+Use the approved domain error model.
+
+Division by zero must be distinguishable from syntax-invalid expressions.
+
+Do not introduce public API messages here unless they already belong to the domain contract defined by SPEC/DESIGN.
+
+Do not implement HTTP status mapping.
+
+## 9. Existing task preservation
+
+Do not regress TASK-GO-001 or TASK-GO-002.
+
+The backend must still:
+
+* build
+* pass `/health` bootstrap tests
+* use standard-library-only production dependencies
+* preserve closed grammar behavior
+
+## 10. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Report:
+
+* number of tests run
+* test result
+* vet result
+* build result
+* dependency result
+
+Confirm no third-party production dependency exists.
+
+## 11. Task tracking
+
+Update only:
+
+`TASK-GO-003`
+
+Mark it Complete only if its Definition of Done is fully satisfied.
+
+Do not change TASK-GO-004 or later tasks.
+
+Do not retroactively rewrite completed task outcomes.
+
+## 12. Prompt audit
+
+Update P009 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-003 result
+* files created/modified
+* arithmetic semantics implemented
+* precedence/associativity behavior implemented
+* division-by-zero handling
+* tests executed/results
+* vet result
+* build result
+* dependency result
+* task status
+* confirmation that exponentiation, percentage, square root, REST calculator API, frontend, and Java were not implemented
+
+Do not rewrite earlier prompts/outcomes.
+
+## 13. Required report
+
+After implementation show:
+
+1. files created/modified
+2. concise evaluator structure explanation
+3. representative arithmetic tests
+4. representative precedence/associativity tests
+5. division-by-zero test/result
+6. `go test ./...`
+7. `go vet ./...`
+8. `go build ./...`
+9. `go list -m all`
+10. `git diff --stat`
+11. `git status`
+12. remaining work beginning with TASK-GO-004
+13. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-003 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-003`. Created `backend-go/internal/expression/evaluator_test.go`; modified `backend-go/internal/expression/parser.go` to add the transport-independent `Evaluate(string) (float64, error)` domain entry point and `ErrDivisionByZero`, modified `TASKS.md` to mark only TASK-GO-003 complete, and modified `docs/ai-prompts.md` to record P009 and this outcome. The existing recursive-descent parser now performs direct float64 evaluation in evaluation mode while `Parse` remains syntax-only. Addition/subtraction and multiplication/division are evaluated at their existing grammar levels, preserving multiplication/division precedence, grouping override, and left associativity. Numeric lexemes are converted with the Go standard library to binary64 values. Division checks the evaluated divisor with `right == 0`, which rejects positive zero, negative zero, and calculated zero using the distinct domain sentinel without returning infinity or introducing HTTP mapping. Tests cover integer, decimal, and explicit binary64 arithmetic; required precedence/grouping examples; chained subtraction/division and mixed multiplicative associativity; positive, negative, decimal, and calculated zero divisors; and representative TASK-GO-002 syntax regressions. The full suite contains 12 top-level Go tests and 65 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-003 is Complete and TASK-GO-004 and later remain unchanged. Exponentiation, percentage, square-root evaluation, general finite-result enforcement, the REST calculator API, frontend, Java, Docker, and parity tooling were not implemented. The existing health endpoint and closed grammar behavior remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.

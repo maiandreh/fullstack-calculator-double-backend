@@ -2,6 +2,7 @@ package expression
 
 import (
 	"errors"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -11,26 +12,41 @@ const maxExpressionLength = 256
 var (
 	ErrInvalidRequest    = errors.New("invalid request")
 	ErrInvalidExpression = errors.New("invalid expression")
+	ErrDivisionByZero    = errors.New("division by zero")
 )
 
 // Parse validates an expression against the approved closed grammar.
 // It deliberately performs no arithmetic evaluation.
 func Parse(input string) error {
+	_, err := parse(input, false)
+	return err
+}
+
+// Evaluate calculates the basic arithmetic expression using float64 semantics.
+func Evaluate(input string) (float64, error) {
+	return parse(input, true)
+}
+
+func parse(input string, evaluate bool) (float64, error) {
 	if utf8.RuneCountInString(input) > maxExpressionLength || isBlank(input) {
-		return ErrInvalidRequest
+		return 0, ErrInvalidRequest
 	}
 
 	tokens, ok := lex([]rune(input))
 	if !ok {
-		return ErrInvalidExpression
+		return 0, ErrInvalidExpression
 	}
 
-	parser := parser{tokens: tokens}
-	if !parser.parseExpression() || parser.current().kind != tokenEOF {
-		return ErrInvalidExpression
+	parser := parser{tokens: tokens, evaluate: evaluate}
+	value, err := parser.parseExpression()
+	if err != nil {
+		return 0, err
+	}
+	if parser.current().kind != tokenEOF {
+		return 0, ErrInvalidExpression
 	}
 
-	return nil
+	return value, nil
 }
 
 func isBlank(input string) bool {
@@ -59,7 +75,8 @@ const (
 )
 
 type token struct {
-	kind tokenKind
+	kind   tokenKind
+	lexeme string
 }
 
 func lex(input []rune) ([]token, bool) {
@@ -100,11 +117,12 @@ func lex(input []rune) ([]token, bool) {
 		default:
 			if isDigit(character) || character == '.' {
 				var ok bool
+				start := position
 				position, ok = lexNumber(input, position)
 				if !ok {
 					return nil, false
 				}
-				tokens = append(tokens, token{kind: tokenNumber})
+				tokens = append(tokens, token{kind: tokenNumber, lexeme: string(input[start:position])})
 				continue
 			}
 			if hasSquareRootAt(input, position) {
@@ -159,77 +177,148 @@ func isDigit(character rune) bool {
 type parser struct {
 	tokens   []token
 	position int
+	evaluate bool
 }
 
-func (p *parser) parseExpression() bool {
+func (p *parser) parseExpression() (float64, error) {
 	return p.parseAdditive()
 }
 
-func (p *parser) parseAdditive() bool {
-	if !p.parseMultiplicative(true) {
-		return false
+func (p *parser) parseAdditive() (float64, error) {
+	left, err := p.parseMultiplicative(true)
+	if err != nil {
+		return 0, err
 	}
-	for p.match(tokenPlus, tokenMinus) {
-		if !p.parseMultiplicative(false) {
-			return false
+	for p.check(tokenPlus, tokenMinus) {
+		operator := p.current().kind
+		p.advance()
+		right, err := p.parseMultiplicative(false)
+		if err != nil {
+			return 0, err
+		}
+		if p.evaluate {
+			if operator == tokenPlus {
+				left += right
+			} else {
+				left -= right
+			}
 		}
 	}
-	return true
+	return left, nil
 }
 
-func (p *parser) parseMultiplicative(allowLeadingSign bool) bool {
-	if !p.parseUnary(allowLeadingSign) {
-		return false
+func (p *parser) parseMultiplicative(allowLeadingSign bool) (float64, error) {
+	left, err := p.parseUnary(allowLeadingSign)
+	if err != nil {
+		return 0, err
 	}
-	for p.match(tokenMultiply, tokenDivide) {
-		if !p.parseUnary(true) {
-			return false
+	for p.check(tokenMultiply, tokenDivide) {
+		operator := p.current().kind
+		p.advance()
+		right, err := p.parseUnary(true)
+		if err != nil {
+			return 0, err
+		}
+		if p.evaluate {
+			if operator == tokenMultiply {
+				left *= right
+			} else {
+				if right == 0 {
+					return 0, ErrDivisionByZero
+				}
+				left /= right
+			}
 		}
 	}
-	return true
+	return left, nil
 }
 
-func (p *parser) parseUnary(allowSign bool) bool {
+func (p *parser) parseUnary(allowSign bool) (float64, error) {
 	if p.check(tokenPlus, tokenMinus) {
 		if !allowSign {
-			return false
+			return 0, ErrInvalidExpression
 		}
+		operator := p.current().kind
 		p.advance()
-		return p.parseUnary(true)
+		value, err := p.parseUnary(true)
+		if err != nil {
+			return 0, err
+		}
+		if p.evaluate && operator == tokenMinus {
+			value = -value
+		}
+		return value, nil
 	}
 	return p.parsePower()
 }
 
-func (p *parser) parsePower() bool {
-	if !p.parsePostfix() {
-		return false
+func (p *parser) parsePower() (float64, error) {
+	left, err := p.parsePostfix()
+	if err != nil {
+		return 0, err
 	}
 	if p.match(tokenPower) {
-		return p.parseUnary(true)
+		if _, err := p.parseUnary(true); err != nil {
+			return 0, err
+		}
+		if p.evaluate {
+			return 0, ErrInvalidExpression
+		}
 	}
-	return true
+	return left, nil
 }
 
-func (p *parser) parsePostfix() bool {
-	if !p.parsePrimary() {
-		return false
+func (p *parser) parsePostfix() (float64, error) {
+	value, err := p.parsePrimary()
+	if err != nil {
+		return 0, err
 	}
+	matched := false
 	for p.match(tokenPercent) {
+		matched = true
 	}
-	return true
+	if p.evaluate && matched {
+		return 0, ErrInvalidExpression
+	}
+	return value, nil
 }
 
-func (p *parser) parsePrimary() bool {
-	if p.match(tokenNumber) {
-		return true
+func (p *parser) parsePrimary() (float64, error) {
+	if p.check(tokenNumber) {
+		current := p.current()
+		p.advance()
+		if !p.evaluate {
+			return 0, nil
+		}
+		value, _ := strconv.ParseFloat(current.lexeme, 64)
+		return value, nil
 	}
 	if p.match(tokenLeftParenthesis) {
-		return p.parseExpression() && p.match(tokenRightParenthesis)
+		value, err := p.parseExpression()
+		if err != nil {
+			return 0, err
+		}
+		if !p.match(tokenRightParenthesis) {
+			return 0, ErrInvalidExpression
+		}
+		return value, nil
 	}
 	if p.match(tokenSquareRoot) {
-		return p.match(tokenLeftParenthesis) && p.parseExpression() && p.match(tokenRightParenthesis)
+		if !p.match(tokenLeftParenthesis) {
+			return 0, ErrInvalidExpression
+		}
+		if _, err := p.parseExpression(); err != nil {
+			return 0, err
+		}
+		if !p.match(tokenRightParenthesis) {
+			return 0, ErrInvalidExpression
+		}
+		if !p.evaluate {
+			return 0, nil
+		}
+		return 0, ErrInvalidExpression
 	}
-	return false
+	return 0, ErrInvalidExpression
 }
 
 func (p *parser) match(kinds ...tokenKind) bool {

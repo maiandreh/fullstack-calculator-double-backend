@@ -53,7 +53,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Binary64-equivalent addition, subtraction, multiplication, division, grouping, precedence, left associativity, and rejection of positive/negative-zero divisors.
 - **Verification required:** Direct evaluator tests for every listed criterion and representative grouped/whitespace cases; no HTTP required.
 - **Definition of Done:** All four mandatory operations and their precedence/error semantics pass domain tests with typed/idiomatic errors.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-004 — Implement unary signs and exponentiation
 
