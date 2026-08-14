@@ -1,0 +1,50 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Java and Maven generated output
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+
+# Go generated and test artifacts
+*.test
+*.prof
+*.pprof
+coverage.out
+
+# Node and Vite generated output
+node_modules/
+dist/
+.vite/
+
+# Test coverage and reports
+coverage/
+.nyc_output/
+test-results/
+
+# Environment files (keep documented templates)
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Editor temporary files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
