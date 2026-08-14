@@ -3411,3 +3411,365 @@ Stop after TASK-GO-001.
 ### Outcome
 
 Resumed the previously blocked `TASK-GO-001` after confirming `go version go1.26.5 linux/amd64` at `/usr/local/go/bin/go`. Created module `github.com/maiandreh/fullstack-calculator-double-backend/backend-go` with `backend-go/go.mod`, `backend-go/cmd/server/main.go`, and `backend-go/cmd/server/main_test.go`; modified `TASKS.md` to mark only `TASK-GO-001` complete and modified this audit file to record P007-R2. Production uses only the Go standard library (`net/http`, standard JSON/configuration/logging packages); `go list -m all` listed only the module itself. `gofmt -w .` completed. With `GOCACHE=/tmp/fullstack-calculator-go-cache` because the sandbox home cache is read-only, `go test ./...` passed (`cmd/server`, 0.004s), `go vet ./...` passed, and `go build ./...` passed; the generated untracked `backend-go/server` binary was removed afterward. The service started on default port `8080`; `curl -i http://localhost:8080/health` returned `HTTP/1.1 200 OK`, `Content-Type: application/json`, and `{"status":"ok"}`, after which the service was stopped. `TASK-GO-001` is complete, and every later task remains unchanged. No calculator endpoint, expression parsing, calculator operations, calculator DTOs, calculator error mapping, frontend, Java, Docker, or parity tooling was implemented. No third-party production dependency was introduced. There was no deviation from the approved requirements, scope, specification, design, ADR-001, or TASK-GO-001; only sandbox-specific writable-cache and localhost permissions were needed for verification.
+
+## P008
+
+### Prompt ID
+
+P008
+
+### Phase
+
+Implementation — Go Expression Parser Foundation
+
+### Objective
+
+Execute only `TASK-GO-002` from `TASKS.md`: implement the bounded lexical/parser foundation for the approved expression language, independently from HTTP and before arithmetic semantics are introduced.
+
+### Prompt
+
+```text
+Prompt ID: P008
+
+Phase: Implementation — Go Expression Parser Foundation
+
+Objective:
+Execute only `TASK-GO-002` from `TASKS.md`: implement the bounded lexical/parser foundation for the approved expression language, independently from HTTP and before arithmetic semantics are introduced.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and any other ADR directly referenced by `TASK-GO-002`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P008` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-002 — Implement lexical and parser foundation`
+
+Do NOT implement:
+
+* addition semantics
+* subtraction semantics
+* multiplication semantics
+* division semantics
+* exponentiation semantics
+* unary plus/minus semantics
+* percentage evaluation
+* square-root evaluation
+* finite-result enforcement
+* `/api/calculate`
+* HTTP calculator request/response handling
+* frontend
+* Java
+* Docker
+* parity tooling
+
+Do NOT modify:
+
+* `REQUIREMENTS.md`
+* `SCOPE.md`
+* `SPEC.md`
+* `DESIGN.md`
+* accepted ADRs
+
+If implementation exposes a conflict with approved artifacts, stop and report it.
+
+## 1. Domain boundary
+
+Create the smallest appropriate package under `backend-go/` for expression parsing/evaluation groundwork.
+
+The parser must remain independent from:
+
+* `net/http`
+* JSON request/response types
+* server configuration
+* transport errors
+
+Do not introduce a service/application layer.
+
+A direct domain package is sufficient.
+
+## 2. Closed expression language
+
+Implement lexical/parser support for the approved syntax foundation.
+
+Recognize only the canonical language from `SPEC.md`:
+
+* decimal numeric literals
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* `(`
+* `)`
+* canonical square-root token/function syntax
+* permitted whitespace
+
+The parser must treat the language as a closed allowlist.
+
+Unsupported identifiers or characters must be rejected.
+
+Do not use regular-expression-based evaluation.
+Do not use `eval`.
+Do not execute arbitrary code.
+Do not add an expression library.
+
+## 3. Numeric literal handling
+
+Support the approved decimal literal forms, including:
+
+* `0`
+* `12`
+* `12.5`
+* `0.5`
+* `.5`
+
+Reject malformed numeric forms, including:
+
+* `.`
+* `1.2.3`
+
+Reject unsupported scientific notation such as:
+
+`1e3`
+
+Reject locale-specific commas and unsupported numeric syntaxes.
+
+Do not introduce arbitrary precision or decimal libraries.
+
+## 4. Whitespace
+
+Whitespace permitted by `SPEC.md` must be ignored where semantically insignificant.
+
+Examples that should lex/parse equivalently at the foundation level include:
+
+* `12`
+* `12`
+* `( 12 )`
+
+Do not allow whitespace to split a token into a different valid token accidentally.
+
+## 5. Parentheses and structure
+
+Implement the foundation needed to recognize balanced grouping syntax.
+
+Support nested parentheses structurally.
+
+Reject:
+
+* unmatched opening parenthesis
+* unmatched closing parenthesis
+* empty parenthesized constructs where the approved grammar does not permit them
+* incomplete/trailing syntax
+
+The parser must require complete input consumption.
+
+No valid prefix followed by trailing unsupported content may be silently accepted.
+
+## 6. Expression length boundary
+
+Enforce the `SPEC.md` maximum expression length of 256 characters at the appropriate non-HTTP domain/parser entry boundary.
+
+The domain/parser must be safe to call directly without relying on the future HTTP layer to enforce this.
+
+Test:
+
+* valid expression at the boundary where practical
+* expression longer than 256 characters
+
+Use the approved error category from `SPEC.md`.
+
+Do not create a second conflicting length rule.
+
+## 7. Parser architecture
+
+Use the custom bounded parser architecture approved in ADR-002.
+
+A small recursive-descent parser or equivalent precedence-based parser is appropriate.
+
+However, for this task, implement only enough structure to support deterministic syntactic recognition and later arithmetic extensions.
+
+Do not build a general compiler framework.
+
+Do not introduce:
+
+* parser-generator tools
+* visitor frameworks
+* generic AST frameworks
+* token interfaces with unnecessary polymorphism
+* dependency-injection abstractions
+
+An internal token representation is acceptable if it clearly simplifies the parser.
+
+An AST is optional and should not be created unless it provides concrete value for the already approved future grammar.
+
+Direct parsing infrastructure is preferred.
+
+## 8. Error model
+
+Introduce domain-level error categories required by this task only.
+
+At minimum, syntax-related failures must be distinguishable from valid parsing.
+
+Reuse the canonical error concepts from `SPEC.md`.
+
+Do not introduce HTTP status codes into the domain.
+
+Do not expose parser-internal diagnostic strings as public API messages.
+
+Internal errors may contain useful developer context if they remain internal.
+
+Do not implement division-by-zero, invalid-domain, or non-finite-result behavior yet except for shared error types only if concretely necessary.
+
+## 9. Tests
+
+Derive tests from the acceptance criteria listed in `TASK-GO-002`.
+
+Add direct parser/domain tests covering at minimum:
+
+### Valid foundation cases
+
+* integer literal
+* decimal literal
+* leading-dot decimal
+* surrounding whitespace
+* parenthesized value
+* nested parentheses
+* complete-input success
+
+### Invalid foundation cases
+
+* `.`
+* `1.2.3`
+* `1e3`
+* unsupported identifier such as `foo`
+* unsupported function such as `sin(1)`
+* trailing operator such as `2 +`
+* malformed repeated operator case required by `SPEC.md`, such as `2 ++ 3`
+* unbalanced opening parenthesis
+* unbalanced closing parenthesis
+* empty grouping where invalid
+* unsupported trailing content
+* expression longer than 256 characters
+
+Also cover canonical `sqrt(...)` token recognition structurally if `TASK-GO-002`/`SPEC.md` requires it at this stage, but do not evaluate square root yet.
+
+Do not write HTTP tests.
+
+Do not test private helper implementation details.
+
+Prefer table-driven tests where they improve clarity.
+
+## 10. Important staging rule
+
+This task establishes syntax/parser infrastructure, not calculator semantics.
+
+If the parser architecture requires recognizing operators in order to validate syntax, that is allowed.
+
+It must not yet return evaluated arithmetic results.
+
+A structural representation, parse success result, or equivalent internal form is acceptable.
+
+Do not sneak arithmetic evaluation into this increment merely because it makes parsing easier.
+
+## 11. Existing bootstrap preservation
+
+Do not regress `TASK-GO-001`.
+
+The Go backend must still:
+
+* build
+* pass bootstrap tests
+* expose `/health`
+* use standard-library-only production dependencies
+
+Do not alter the health endpoint unless a concrete regression fix is required.
+
+## 12. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Report:
+
+* number of Go tests run
+* passing/failing result
+* vet result
+* build result
+* module/dependency result
+
+Confirm no third-party production dependency exists.
+
+## 13. Task tracking
+
+Update only:
+
+* `TASK-GO-002`
+
+Mark it Complete only if its Verification and Definition of Done from `TASKS.md` are fully satisfied.
+
+Do not change later tasks.
+
+Do not retroactively alter completed TASK-GO-001 except to correct a demonstrated factual error.
+
+## 14. Prompt audit outcome
+
+Update P008 Outcome in `docs/ai-prompts.md` with:
+
+* TASK-GO-002 execution result
+* files created/modified
+* parser structure introduced
+* test categories implemented
+* test command/result
+* vet result
+* build result
+* dependency result
+* task status
+* confirmation that no arithmetic evaluation was implemented
+* confirmation that no HTTP calculator contract was implemented
+* confirmation that no third-party expression library was introduced
+
+Do not rewrite previous prompts or outcomes.
+
+## 15. Required report
+
+After implementation, show:
+
+1. files created/modified
+2. concise parser structure explanation
+3. representative parser/domain tests
+4. `go test ./...` result
+5. `go vet ./...` result
+6. `go build ./...` result
+7. `go list -m all` result
+8. `git diff --stat`
+9. `git status`
+10. remaining work beginning with `TASK-GO-003`
+11. any deviation/conflict with SPEC, DESIGN, ADRs, or TASKS
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-002 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-002`. Created `backend-go/internal/expression/parser.go` and `backend-go/internal/expression/parser_test.go`; modified only `TASKS.md` to mark TASK-GO-002 complete and `docs/ai-prompts.md` to record P008 and this outcome. The domain package exposes `Parse(string) error` and canonical domain sentinels for invalid request boundaries and invalid expression syntax. Internally it uses a rune-aware closed-allowlist lexer and a small recursive-descent recognizer following the approved additive, multiplicative, unary, power, postfix, and primary grammar levels, with complete-input consumption and a 256-Unicode-character boundary. It produces no value and performs no arithmetic. Tests cover approved integer/decimal forms, whitespace, grouping/nesting, every canonical operator structurally, `sqrt(...)` recognition, complete consumption, malformed numbers, scientific/locale/unsupported syntax, split or unsupported identifiers/functions, malformed operators, unbalanced/empty constructs, trailing content, the valid 256-character boundary, overlength input, and Unicode character counting. The full suite contains 8 top-level Go tests and 35 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-002 is Complete and later tasks remain unchanged. No arithmetic evaluation, finite-result behavior, calculator HTTP contract, or `/api/calculate` endpoint was implemented, and the existing health bootstrap was not changed. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.

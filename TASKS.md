@@ -42,7 +42,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Decimal literals, whitespace, parentheses, approved tokens/functions, complete consumption, closed-grammar rejection, and expression-length boundary at the appropriate non-HTTP entry. Keep calculation independent from transport.
 - **Verification required:** Domain tests for valid literal forms, whitespace/parentheses, 256-character boundary, malformed numbers, unsupported tokens/functions/scientific notation, trailing input/operators, and unbalanced/empty constructs.
 - **Definition of Done:** Foundation accepts and rejects the specified syntax deterministically without HTTP, arbitrary execution, or permissive recovery; relevant tests pass.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-003 — Implement basic arithmetic and precedence
 
