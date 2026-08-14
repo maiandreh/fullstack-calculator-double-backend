@@ -219,3 +219,264 @@ Stop after this phase and wait for human review.
 ### Outcome
 
 Repository governance and prompt auditing were established.
+
+## P002
+
+### Prompt ID
+
+P002
+
+### Phase
+
+Requirements Capture
+
+### Objective
+
+Create a traceable requirements baseline derived strictly from the technical assessment. Separate what the assessment requires from what it merely permits or prefers, and from decisions that have not yet been made.
+
+### Prompt
+
+```text
+Prompt ID: P002
+
+Phase: Requirements Capture
+
+Objective:
+Create a traceable requirements baseline derived strictly from the technical assessment. Separate what the assessment requires from what it merely permits or prefers, and from decisions that have not yet been made.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `docs/ai-prompts.md`.
+3. Record this exact prompt as `P002` in `docs/ai-prompts.md` before modifying any other repository file.
+
+Do NOT implement application code.
+Do NOT create `SPEC.md`, `DESIGN.md`, or `TASKS.md` yet.
+Do NOT initialize any programming language, framework, dependency manager, or build system.
+Do NOT make architecture decisions.
+
+## Source material
+
+Use the following assessment requirements as the only source of product requirements for this phase:
+
+### Overview
+
+Build a basic calculator application with a React frontend and a backend microservice.
+
+The goal is to demonstrate clean design, maintainability, and testable architecture.
+
+### Functional Requirements
+
+The calculator must support:
+
+Mandatory:
+
+* Addition
+* Subtraction
+* Multiplication
+* Division
+
+Optional:
+
+* Exponentiation
+* Square Root
+* Percentage
+
+### Frontend Requirements
+
+* Use React.
+* Provide an intuitive UI for input and displaying results.
+* Include basic responsive design.
+
+### Backend Requirements
+
+* Expose a REST API.
+* Accept operation requests.
+* Validate input.
+* Handle edge cases such as division by zero.
+* Return results as JSON.
+
+### Testing
+
+* Include unit tests for key functionality in both frontend and backend.
+* Go is the preferred backend language.
+
+### Documentation
+
+Include a README containing:
+
+* setup instructions
+* instructions for running frontend and backend
+* API usage examples
+* brief design decisions
+
+Also include:
+
+* a test coverage report
+
+Docker setup is optional.
+
+### Process and evaluation guidance
+
+* AI tools are allowed.
+* Relevant prompts used during the assessment must be shared.
+* Expected effort is approximately 2–4 hours.
+* Prioritize correctness, clarity, and maintainability over additional features.
+
+## Required output
+
+Create only:
+
+`REQUIREMENTS.md`
+
+Use stable identifiers so later specifications, acceptance criteria, tasks, tests, and documentation can trace back to requirements.
+
+Use these categories and identifier prefixes:
+
+### Mandatory functional requirements
+
+`REQ-F-###`
+
+Capture the four mandatory calculator operations separately.
+
+### Optional functional requirements
+
+`REQ-O-###`
+
+Capture exponentiation, square root, and percentage separately.
+
+Do not promote them to mandatory requirements.
+
+### Frontend requirements
+
+`REQ-FE-###`
+
+### Backend requirements
+
+`REQ-BE-###`
+
+### Testing and quality requirements
+
+`REQ-Q-###`
+
+Include clean design, maintainability, testability, unit testing, and coverage/reporting requirements where supported by the assessment.
+
+### Documentation and delivery requirements
+
+`REQ-D-###`
+
+### Constraints and preferences
+
+`CON-###`
+
+Record facts such as:
+
+* React is required.
+* The backend must expose REST.
+* Go is preferred, not required.
+* Expected effort is approximately 2–4 hours.
+* correctness, clarity, and maintainability take precedence over feature quantity.
+
+Do not convert a preference into a requirement.
+
+### Project extensions
+
+Create a section named:
+
+`Project Extensions`
+
+It must initially contain:
+
+`None approved.`
+
+Do NOT add Java, multiple backends, backend switching, scientific-calculator UX, Docker, or any other project-specific idea to this section yet.
+
+Those decisions have not been approved within the new SDD lifecycle.
+
+### Open decisions
+
+Create a section named:
+
+`Open Decisions`
+
+Record questions that the assessment leaves unspecified and that must be resolved during specification/design.
+
+At minimum consider whether the source leaves these unspecified:
+
+* exact API request shape
+* exact API response/error shape
+* numeric representation and precision
+* semantics of percentage
+* semantics and valid domain of square root
+* behavior for mathematically invalid or non-finite results
+* frontend interaction model
+* whether optional operations will be implemented
+* whether optional Docker support will be implemented
+* backend implementation language, acknowledging that Go is preferred
+
+Do not resolve these questions in this phase.
+
+## Requirement format
+
+Each requirement should contain, where applicable:
+
+* ID
+* Statement
+* Source classification
+* Priority/status
+* Verification approach at a high level
+
+Example structure:
+
+### REQ-F-001 — Addition
+
+**Statement:** The calculator shall support addition.
+
+**Source:** Assessment — Functional Requirements
+
+**Status:** Mandatory
+
+**Verification:** Demonstrate addition through automated behavioral testing.
+
+Do not define implementation details in the verification field.
+
+## Traceability
+
+At the end of `REQUIREMENTS.md`, add a compact traceability summary showing that every source requirement from the assessment has been captured.
+
+The purpose is source coverage, not implementation traceability yet.
+
+Do not invent implementation task IDs, test IDs, or specification IDs at this stage.
+
+## Prompt outcome
+
+After completing `REQUIREMENTS.md`, update the `P002` Outcome in `docs/ai-prompts.md` with:
+
+* files created/modified
+* requirement categories created
+* number of requirements captured in each category
+* open decisions recorded
+* confirmation that no architecture or implementation decisions were made
+
+Keep the outcome factual.
+
+## Verification
+
+After completing the phase:
+
+1. Show the complete `REQUIREMENTS.md`.
+2. Show the P002 entry from `docs/ai-prompts.md`.
+3. Show `git diff --stat`.
+4. Show `git status`.
+5. Explicitly identify any source statement you could not classify without making an assumption.
+6. Confirm that no application code, build configuration, specification, design, or implementation plan was created.
+
+Do not commit.
+Do not push.
+
+Stop and wait for human review.
+```
+
+### Outcome
+
+Created `REQUIREMENTS.md` and modified `docs/ai-prompts.md`. The baseline contains 4 mandatory functional requirements, 3 optional functional requirements, 3 frontend requirements, 6 backend requirements, 6 testing and quality requirements, 6 documentation and delivery requirements, and 7 constraints and preferences. It also records that no project extensions are approved, identifies 10 open decisions, and provides source-coverage traceability for all supplied assessment statements. No architecture or implementation decisions were made.
