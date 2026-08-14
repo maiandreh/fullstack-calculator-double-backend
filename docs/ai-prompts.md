@@ -1511,3 +1511,704 @@ Stop and wait for human review.
 ### Outcome
 
 Created `SPEC.md`; modified `docs/ai-prompts.md`; `AGENTS.md` required no change because it already establishes `SPEC.md` authority consistently. The specification contains 11 expression rules, 3 API rules, 6 error rules, 7 UI rules, and 2 parity rules. It contains 20 expression acceptance criteria, 3 API criteria, 12 error criteria, 16 UI criteria, and 7 parity criteria. It resolves the numeric model and parity tolerance, canonical expression tokens and grammar, operator semantics and precedence, request and response contracts, error taxonomy, content-type status behavior, frontend interactions, keyboard behavior, backend selection, and valid/invalid backend parity. Backend languages and frameworks, evaluation approach or library, parser design, frontend tooling and internal structure, deployment, and optional Docker support remain architecture decisions. No implementation technology, framework, parser implementation, or expression library was selected.
+
+## P005
+
+### Prompt ID
+
+P005
+
+### Phase
+
+Architecture and Design
+
+### Objective
+
+Define the technical architecture that implements the approved requirements, scope, and behavioral specification with minimal complexity, strong testability, and deterministic behavior across two backend implementations.
+
+### Prompt
+
+```text
+Prompt ID: P005
+
+Phase: Architecture and Design
+
+Objective:
+Define the technical architecture that implements the approved requirements, scope, and behavioral specification with minimal complexity, strong testability, and deterministic behavior across two backend implementations.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `docs/ai-prompts.md`.
+6. Record this exact prompt as `P005` in `docs/ai-prompts.md` before modifying any other repository file.
+
+Create:
+
+* `DESIGN.md`
+* `docs/decisions/ADR-001-primary-go-backend.md`
+* `docs/decisions/ADR-002-shared-expression-parser.md`
+* `docs/decisions/ADR-003-secondary-java-backend.md`
+* `docs/decisions/ADR-004-frontend-stack.md`
+* `docs/decisions/ADR-005-containerized-delivery.md`
+
+Update:
+
+* `AGENTS.md` only if needed to reflect approved `DESIGN.md`/ADR authority.
+* `SCOPE.md` only to promote Docker from optional/open to committed delivery scope, while preserving its original assessment classification as optional.
+* `docs/ai-prompts.md` with the factual P005 outcome.
+
+Do NOT implement application code.
+Do NOT initialize Go modules, Maven, npm, Docker files, or build systems yet.
+Do NOT create `TASKS.md`.
+Do NOT alter behavioral requirements in `SPEC.md`.
+
+# 1. Architecture goals
+
+The architecture must optimize for:
+
+1. correctness
+2. clarity
+3. maintainability
+4. testability
+5. backend behavioral parity
+6. small dependency surface
+7. suitability for a 2–4 hour technical assessment
+
+Do not optimize for hypothetical scale or future enterprise requirements.
+
+# 2. Repository architecture
+
+Approve this target repository layout:
+
+```text
+fullstack-calculator-double-backend/
+├── AGENTS.md
+├── REQUIREMENTS.md
+├── SCOPE.md
+├── SPEC.md
+├── DESIGN.md
+├── TASKS.md
+├── README.md
+├── .gitignore
+│
+├── docs/
+│   ├── ai-prompts.md
+│   └── decisions/
+│
+├── frontend/
+├── backend-go/
+├── backend-java/
+└── docker-compose.yml
+```
+
+Directories/files should be created only in their implementation phase unless this prompt explicitly creates documentation.
+
+# 3. Backend A — primary Go implementation
+
+Select Go as the primary backend implementation because the assessment explicitly prefers Go.
+
+Use a currently supported Go release available in the developer environment.
+
+Prefer the Go standard library.
+
+HTTP stack:
+
+* `net/http`
+* `http.ServeMux`
+* standard JSON encoding/decoding
+
+Do not use Gin, Echo, Fiber, Chi, or another HTTP framework unless a concrete requirement later proves the standard library insufficient.
+
+Rationale:
+
+* the API contains one calculator endpoint
+* modern `net/http` routing is sufficient
+* fewer dependencies improve clarity
+* HTTP infrastructure is not the subject of the assessment
+
+Default local port:
+
+`8080`
+
+# 4. Backend B — Java compatibility implementation
+
+Select Java as the secondary backend implementation.
+
+Purpose:
+
+* demonstrate that the frontend depends on the shared API contract rather than backend technology
+* demonstrate contract-first interoperability
+* provide an independently implemented parity target
+
+Use:
+
+* Java 21
+* Spring Boot
+* Maven
+* Spring Web
+* JUnit 5
+* MockMvc for focused HTTP contract tests
+* JaCoCo for coverage
+
+Do not use Lombok.
+
+Default local port:
+
+`8081`
+
+Keep the Java implementation intentionally small.
+
+Do not introduce:
+
+* persistence
+* repositories
+* messaging
+* authentication
+* service interfaces with single trivial implementations
+* factories without behavioral need
+* Strategy/Command frameworks
+* hexagonal/clean-architecture ceremony merely for demonstration
+
+# 5. Shared architecture principle
+
+The two backends share:
+
+* specification
+* grammar
+* acceptance criteria
+* API contract
+* parity expectations
+
+They do NOT share source code.
+
+Each implementation must be idiomatic in its own language.
+
+Do not create generated shared runtime libraries merely to force code reuse between Go and Java.
+
+The specification is the shared artifact.
+
+# 6. Expression evaluator decision
+
+Select a small custom parser/evaluator for each backend.
+
+Do NOT use a third-party expression-evaluation library.
+
+Document the rationale:
+
+* `SPEC.md` defines a deliberately small closed grammar
+* library semantics for `%`, exponentiation, unary minus, square root, errors, and precedence may differ
+* two different language libraries would create parity risk
+* a bounded parser keeps product semantics under project control
+* dependency count remains low
+* acceptance criteria can directly drive parser tests
+
+This is not permission to build a general-purpose parser framework.
+
+# 7. Parser design
+
+Use a small recursive-descent parser or equivalent precedence-based implementation.
+
+Separate lexical/parsing/evaluation concerns only where doing so improves clarity.
+
+Do not require an AST unless the implementation naturally benefits from one.
+
+Direct evaluation while parsing is acceptable.
+
+Design conceptually around grammar levels equivalent to:
+
+```text
+expression        → addition/subtraction
+multiplicative    → multiplication/division
+unary             → unary signs with the SPEC-defined exponent rule
+power             → right-associative exponentiation
+postfix           → percentage
+primary           → number | parenthesized expression | sqrt(...)
+```
+
+The final exact grammar must conform to `SPEC.md`.
+
+Important:
+
+* Do not alter precedence to simplify implementation.
+* Preserve right-associative exponentiation.
+* Preserve `-2 ^ 2 = -4`.
+* Preserve `(-2) ^ 2 = 4`.
+* Preserve postfix percentage behavior.
+* Reject unsupported syntax rather than attempting permissive recovery.
+
+# 8. Domain/transport separation
+
+For both backends, keep expression evaluation independent from HTTP.
+
+Conceptually:
+
+```text
+HTTP Handler / Controller
+          |
+          v
+   Calculator/Evaluator
+          |
+          v
+       Parser
+```
+
+HTTP types must not leak into parser/domain logic.
+
+Do not create unnecessary application/service layers between these components.
+
+Domain errors should be representable independently of HTTP and mapped to the API error contract at the transport boundary.
+
+# 9. Error architecture
+
+Internal implementations may use language-idiomatic typed/sentinel/domain errors.
+
+Transport code maps those errors to the canonical `SPEC.md` contract:
+
+* INVALID_REQUEST
+* INVALID_EXPRESSION
+* DIVISION_BY_ZERO
+* INVALID_DOMAIN
+* NON_FINITE_RESULT
+
+Dependency/framework exception messages must never become public API messages.
+
+Unexpected internal errors must not expose stack traces or implementation details.
+
+# 10. Frontend architecture
+
+Select:
+
+* React
+* TypeScript
+* Vite
+
+Use the browser `fetch` API.
+
+Do not add Axios.
+
+Use:
+
+* Vitest
+* React Testing Library
+* user-event where useful
+
+Do not add:
+
+* Redux
+* Zustand
+* MobX
+* React Router
+* a UI component framework
+* a CSS framework
+* a form library
+
+unless a later concrete requirement justifies it.
+
+For this application, local React state is the default.
+
+# 11. Frontend component boundaries
+
+Keep the frontend small but not monolithic.
+
+A target conceptual structure may be:
+
+```text
+src/
+├── App.tsx
+├── main.tsx
+├── api/
+│   └── calculatorApi.ts
+├── config/
+│   └── backends.ts
+├── components/
+│   ├── Calculator.tsx
+│   ├── Display.tsx
+│   ├── Keypad.tsx
+│   └── BackendSelector.tsx
+└── ...
+```
+
+This structure is guidance, not a requirement to create files without responsibility.
+
+Responsibilities:
+
+* `Calculator` coordinates calculator UI state
+* `Display` presents expression/result/error
+* `Keypad` emits calculator input actions
+* `BackendSelector` selects the target backend
+* API module owns REST communication
+* backend configuration remains outside UI components
+
+Do not duplicate the parser/evaluator in the frontend.
+
+# 12. Frontend expression state
+
+The frontend stores the expression being constructed.
+
+It may perform UI-level input shaping required to make keypad behavior usable, such as:
+
+* appending supported symbols
+* backspace
+* clear
+* translating display operators to canonical transport tokens
+
+It must not independently determine the mathematical result.
+
+Backend evaluation remains authoritative.
+
+# 13. Backend configuration
+
+Default local endpoints:
+
+Go:
+`http://localhost:8080`
+
+Java:
+`http://localhost:8081`
+
+Frontend backend configuration must be overridable through Vite environment variables.
+
+Do not hardcode environment-specific production URLs throughout UI components.
+
+# 14. CORS
+
+During local development, both APIs must permit the Vite development origin using minimal CORS configuration.
+
+Do not introduce a dedicated gateway or reverse proxy merely to avoid CORS during development.
+
+Containerized deployment may use environment-specific frontend backend URLs.
+
+# 15. Testing architecture
+
+Use a test pyramid appropriate to this small application.
+
+## Parser/domain tests
+
+Most expression semantics should be verified directly without HTTP.
+
+Derive cases from `AC-EXPR-*` and relevant error criteria.
+
+## HTTP contract tests
+
+Verify:
+
+* request decoding/validation
+* API result schema
+* error mapping
+* HTTP status codes
+
+Do not duplicate every parser permutation through HTTP if domain coverage already proves it.
+
+## Frontend tests
+
+Verify observable interaction behavior using React Testing Library:
+
+* keypad
+* keyboard
+* display
+* evaluate
+* clear/backspace
+* backend selection
+* API success/error/connectivity states
+* duplicate submission prevention
+
+Mock the network at the frontend test boundary.
+
+## Cross-backend parity verification
+
+Create a later integration mechanism that runs the same contract dataset against both live backends.
+
+Prefer a small repository-level script/test fixture rather than copying parity expectations manually into unrelated places.
+
+The parity dataset must reference representative `AC-PAR-*` criteria.
+
+Do not require a heavy contract-testing framework.
+
+# 16. Coverage
+
+Go:
+
+Use built-in Go coverage tooling.
+
+Java:
+
+Use JaCoCo.
+
+Frontend:
+
+Use Vitest coverage.
+
+Do not set arbitrary coverage percentage gates unless later justified.
+
+README must document how to generate each report.
+
+Generated coverage output must remain ignored by Git.
+
+# 17. Docker promotion
+
+Promote Docker support into committed project delivery scope.
+
+Preserve the fact that Docker is optional in the assessment source.
+
+The final project must include container support for:
+
+* frontend
+* Go backend
+* Java backend
+
+and a root Compose configuration capable of starting the full application.
+
+Keep containerization simple.
+
+Do not introduce Kubernetes, Helm, service discovery, an API gateway, or production orchestration.
+
+Docker is a delivery convenience and assessment optional feature, not an architectural centerpiece.
+
+# 18. Container topology
+
+Conceptually:
+
+```text
+browser
+  |
+frontend
+  |
+  +--> Go backend
+  |
+  +--> Java backend
+```
+
+The frontend must still support selecting the desired backend.
+
+Do not hide the two backend implementations behind a single API that would eliminate the selector extension.
+
+# 19. Static quality tools
+
+Use language/toolchain-native formatting and static checks where practical.
+
+Go:
+
+* `gofmt`
+* `go vet`
+* `go test`
+
+Java:
+
+* Maven compile/test lifecycle
+* do not add Checkstyle/SpotBugs merely to increase tooling unless later justified
+
+Frontend:
+
+* TypeScript compile/build checks
+* use the linting setup created by the chosen Vite template if lightweight
+* do not add multiple overlapping lint/format systems
+
+Avoid tooling whose configuration is larger than the value it provides to this assessment.
+
+# 20. Dependency policy
+
+Every third-party production dependency must have a concrete reason.
+
+Expected production dependencies should remain minimal:
+
+Go:
+
+* ideally standard library only
+
+Java:
+
+* Spring Boot Web/runtime dependencies
+
+Frontend:
+
+* React runtime
+
+Testing/build dependencies are permitted where required by the approved testing strategy.
+
+Do not add a dependency merely to avoid writing a few lines of straightforward code.
+
+# 21. Security posture
+
+This is not an authentication/security assessment, but expression input is untrusted input.
+
+Architectural safeguards:
+
+* use only the closed parser grammar
+* never use language `eval`
+* never invoke shell commands
+* never dynamically execute user-supplied code
+* enforce the expression-length requirement from SPEC
+* return controlled errors
+
+Do not add authentication, authorization, database security, or unrelated security infrastructure.
+
+# 22. ADR requirements
+
+Create concise ADRs.
+
+Each ADR must contain:
+
+* Title
+* Status: Accepted
+* Context
+* Decision
+* Alternatives considered
+* Consequences
+
+## ADR-001 — Primary Go Backend
+
+Record:
+
+* Go selected because the assessment prefers it
+* standard `net/http` selected over an HTTP framework
+
+Alternatives:
+
+* Java as sole backend
+* Go with third-party HTTP framework
+
+## ADR-002 — Shared Expression Parser Strategy
+
+Record:
+
+* custom bounded parser in each backend
+* specification is shared, code is not
+* no expression library
+
+Alternatives:
+
+* third-party library in each language
+* custom parser in only one backend
+* frontend evaluation
+
+## ADR-003 — Secondary Java Backend
+
+Record:
+
+* Java 21 + Spring Boot + Maven
+* purpose is contract/interoperability demonstration
+
+Alternative:
+
+* only the required/preferred single Go backend
+
+Explicitly acknowledge that the second backend is a project extension and increases delivery cost.
+
+## ADR-004 — Frontend Stack
+
+Record:
+
+* React + TypeScript + Vite
+* native fetch
+* local state
+* lightweight component decomposition
+
+Alternatives:
+
+* React JavaScript
+* Axios
+* global state library
+
+## ADR-005 — Containerized Delivery
+
+Record:
+
+* Docker support promoted into project delivery scope
+* Compose for local full-stack startup
+
+Alternative:
+
+* documented native-only startup
+
+# 23. DESIGN.md structure
+
+Include at minimum:
+
+1. Purpose
+2. Architectural Drivers
+3. System Context
+4. Component Architecture
+5. Repository Layout
+6. Go Backend Design
+7. Java Backend Design
+8. Expression Evaluation Design
+9. Error Mapping
+10. Frontend Design
+11. Backend Selection
+12. Testing Strategy
+13. Cross-Backend Parity Strategy
+14. Coverage Strategy
+15. Container Architecture
+16. Security Boundaries
+17. Dependency Policy
+18. Quality/Tooling Strategy
+19. Trade-offs
+20. ADR Index
+21. Deferred Implementation Details
+
+Use small diagrams in Mermaid or text only where they improve clarity.
+
+Avoid documentation volume for its own sake.
+
+# 24. Deferred details
+
+Do not unnecessarily pin patch-level framework versions in architecture documentation.
+
+Exact dependency versions should be selected during project initialization from current stable releases compatible with the approved platform versions.
+
+Do not decide implementation class/function names except illustrative examples.
+
+# 25. Update SCOPE.md
+
+Update only the Docker-related scope decision:
+
+* Docker remains optional in the assessment source.
+* Docker is now committed in this project's delivery scope.
+
+Record this as an architecture/delivery decision without changing requirement provenance.
+
+# 26. Prompt outcome
+
+After completion, update P005 Outcome with:
+
+* files created
+* files modified
+* architecture technologies selected
+* expression-evaluation approach selected
+* Docker promotion
+* ADRs created
+* major alternatives rejected
+* confirmation that no application code/build project was initialized
+
+Keep it factual.
+
+# Verification
+
+After completing the phase:
+
+1. Show `DESIGN.md`.
+2. Show each ADR.
+3. Show the Docker-related `SCOPE.md` change.
+4. Show any changed `AGENTS.md` section.
+5. Show the P005 entry from `docs/ai-prompts.md`.
+6. Show `git diff --stat`.
+7. Show `git status`.
+8. Confirm Go is the primary assessment-aligned backend.
+9. Confirm Java is documented as an optional project extension rather than an assessment requirement.
+10. Confirm expression libraries were rejected intentionally.
+11. Confirm the parser architecture conforms to SPEC rather than redefining it.
+12. Confirm Docker source provenance remains optional while delivery commitment is now mandatory.
+13. Confirm no application source code, dependency manifest, build configuration, Dockerfile, or Compose file was created.
+
+Do not commit.
+Do not push.
+
+Stop and wait for human review.
+```
+
+### Outcome
+
+Created `DESIGN.md` and five accepted ADRs under `docs/decisions/`; modified `SCOPE.md` and `docs/ai-prompts.md`; `AGENTS.md` required no change because it already defines `DESIGN.md` authority. Selected a primary Go backend using standard `net/http`, a secondary Java 21 backend using Spring Boot, Maven, Spring Web, JUnit 5, MockMvc, and JaCoCo, and a React/TypeScript/Vite frontend using native `fetch`, local state, Vitest, React Testing Library, and `user-event` where useful. Selected independent small custom bounded parsers conforming to `SPEC.md`, with specification and parity fixtures shared but no runtime source sharing or third-party expression library. Promoted Docker from optional assessment provenance to committed project delivery scope with three containers and root Compose planned. Created ADRs for the primary Go backend, parser strategy, secondary Java backend, frontend stack, and containerized delivery. Rejected unnecessary Go HTTP frameworks, third-party expression libraries, frontend evaluation, a single-backend delivery, Axios/global state libraries, and native-only delivery for the documented reasons. No application source code, dependency manifest, build configuration, Dockerfile, Compose file, or build project was created or initialized.

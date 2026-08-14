@@ -94,6 +94,8 @@ The frontend must not independently implement the calculation engine. Minor pres
 
 The final application will contain two interchangeable backend implementations that expose the same externally observable calculator behavior. The frontend will allow the user to select which backend processes a calculation.
 
+Docker support, although optional in the assessment source under `CON-007`, is committed in this project's delivery scope. The final delivery includes container support for the frontend and both backends plus a root Compose configuration for full-application startup.
+
 This extension demonstrates:
 
 - Contract-first interoperability.
@@ -133,7 +135,6 @@ The following decisions remain for the architecture phase:
 - The two backend implementation languages, while considering the Go preference in CON-003.
 - Backend frameworks.
 - Whether evaluation uses a third-party expression library, a standard-library capability, or a small custom parser/evaluator.
-- Whether optional Docker support is promoted into delivery scope.
 
 Expression-evaluation candidates must later be evaluated for correctness, deterministic behavior, operator and precedence support, percentage and square-root behavior, input restriction capabilities, dependency weight, maintainability, parity across both backend languages, and suitability for a two-to-four-hour assessment. A library must conform to the approved specification; it must not redefine it.
 
@@ -148,6 +149,7 @@ Relative to the Open Decisions in `REQUIREMENTS.md`, this phase resolves:
 - **Responsibility for evaluation:** Evaluation belongs to the backend, with no independent frontend calculation engine.
 - **Multiple-backend extension and parity:** Two selectable, interchangeable backends must provide semantically equivalent valid results and invalid-expression behavior.
 - **Expression-language boundaries:** The committed capabilities and explicit exclusions are established at product-scope level.
+- **Docker delivery:** Docker remains optional in assessment provenance but is promoted into this project's committed delivery scope.
 
 ## 13. Remaining Open Decisions
 
@@ -161,5 +163,4 @@ The following remain deliberately unresolved:
 - The two backend implementation languages, acknowledging the Go preference.
 - Backend frameworks.
 - Expression-evaluation implementation approach and any library selection.
-- Whether Docker support will be promoted into committed delivery scope.
 - Detailed responsive UI behavior and measurable usability acceptance criteria.
