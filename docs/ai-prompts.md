@@ -4761,3 +4761,277 @@ Stop after TASK-GO-005 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-005`. Modified `backend-go/internal/expression/parser.go` to implement postfix percentage and explicit square-root evaluation, modified `backend-go/internal/expression/evaluator_test.go` with direct percentage, square-root, invalid-domain, malformed-syntax, and regression tests, modified `TASKS.md` to mark only TASK-GO-005 complete, and modified `docs/ai-prompts.md` to record P011 and this outcome. No new application file, package, dependency, DTO, or transport layer was created. At the existing postfix grammar level, every `%` divides the current value by 100, preserving precedence and compositional semantics: `20% = 0.2`, `150 * 20% = 30`, and `100 + 20% = 100.2`, not 120. Because SPEC-EXPR-004 explicitly defines `postfix ::= primary ("%")*`, repeated percentages are permitted and tested (`20%% = 0.002`). The existing explicit `sqrt` primary now evaluates its complete expression argument with `math.Sqrt`; `sqrt(81) = 9`, `sqrt(9 + 7) = 4`, decimal/grouped/nested arguments pass, and negative evaluated arguments return the distinct transport-independent `ErrInvalidDomain` rather than successful NaN. Malformed `sqrt`, unsupported functions and Unicode square root, leading/misplaced percentage, and invalid trailing percentage content remain `ErrInvalidExpression`. Existing arithmetic precedence, right-associative exponentiation, unary/power precedence, signed exponents, division-by-zero, closed grammar, and health tests also passed. The full suite contains 16 top-level Go tests and 94 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-005 is Complete and TASK-GO-006 and later remain unchanged. The complete non-finite-result guarantee remains deliberately deferred to TASK-GO-006. The REST calculator API, request/response DTOs, HTTP error mapping, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.
+
+## P012
+
+### Prompt ID
+
+P012
+
+### Phase
+
+Implementation — Go Finite Result Enforcement
+
+### Objective
+
+Execute only `TASK-GO-006` from `TASKS.md`: guarantee that the Go expression domain never returns NaN or infinity as a successful result and that non-finite outcomes are classified according to `SPEC.md`.
+
+### Prompt
+
+```text
+Prompt ID: P012
+
+Phase: Implementation — Go Finite Result Enforcement
+
+Objective:
+Execute only `TASK-GO-006` from `TASKS.md`: guarantee that the Go expression domain never returns NaN or infinity as a successful result and that non-finite outcomes are classified according to `SPEC.md`.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and any other ADR directly referenced by `TASK-GO-006`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P012` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-006 — Enforce finite results`
+
+Do NOT implement:
+
+* `/api/calculate`
+* JSON request/response handling
+* HTTP error mapping
+* frontend
+* Java
+* Docker
+* parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the current evaluator exposes a conflict with `SPEC.md`, stop and report it rather than silently changing the contract.
+
+## 1. Finite success invariant
+
+The evaluator must guarantee:
+
+A successful evaluation result is always a finite binary64 value.
+
+Successful evaluation must never return:
+
+* NaN
+* positive infinity
+* negative infinity
+
+Use idiomatic Go standard-library checks.
+
+Do not add dependencies.
+
+## 2. Error precedence
+
+Preserve more specific approved domain errors.
+
+Examples:
+
+* division by zero → division-by-zero domain category
+* square root of a negative value → invalid-domain category
+
+These must not be replaced by a generic non-finite-result error merely because the underlying floating-point operation could produce infinity or NaN.
+
+Only use the non-finite-result category when no more specific approved error applies.
+
+## 3. Non-finite result cases
+
+Add deterministic handling for expressions whose otherwise valid evaluation would result in a non-finite binary64 value.
+
+Representative cases may include:
+
+* overflow from exponentiation
+* overflow from multiplication
+* any other finite-input computation that produces infinity
+
+Do not depend on an exact parser implementation detail for classification.
+
+The evaluator boundary should enforce the invariant regardless of which operation produced the non-finite result.
+
+## 4. Literal handling
+
+If `SPEC.md` prohibits non-finite numeric literals or unsupported numeric forms, preserve that rule.
+
+Do not add support for textual values such as:
+
+* `NaN`
+* `Inf`
+* `Infinity`
+
+Do not add scientific notation if it remains outside the approved grammar.
+
+## 5. Architecture
+
+Keep finite-result validation within the domain/evaluator boundary.
+
+Do not implement this only in the future HTTP layer.
+
+The same domain must remain safely callable by direct unit tests and by the future REST handler.
+
+Avoid duplicating non-finite checks across many operators if one clear evaluator boundary can enforce the invariant.
+
+Use the simplest design consistent with existing code.
+
+## 6. Existing semantics preservation
+
+Do not regress:
+
+* numeric literal behavior
+* whitespace
+* parentheses
+* closed grammar
+* arithmetic
+* precedence
+* left associativity
+* division-by-zero handling
+* unary plus/minus
+* exponentiation
+* right associativity
+* `-2 ^ 2 = -4`
+* `(-2) ^ 2 = 4`
+* signed exponents
+* percentage
+* square root
+* invalid square-root domain
+
+## 7. Tests
+
+Derive tests from `TASK-GO-006` and relevant `SPEC.md` acceptance criteria.
+
+Add direct evaluator tests covering at minimum:
+
+### Finite success
+
+* representative normal arithmetic remains finite
+* representative decimal result remains finite
+
+### Non-finite result
+
+* exponentiation overflow producing infinity is rejected
+* another representative overflow path if practical
+
+### Specific error precedence
+
+* division by zero still returns the specific division-by-zero category
+* negative square root still returns the specific invalid-domain category
+
+### Invalid literal/syntax preservation
+
+* unsupported textual non-finite values remain invalid expressions
+* unsupported scientific notation remains invalid if required by SPEC
+
+### Regression
+
+Representative existing operation and precedence cases still pass.
+
+Do not add HTTP tests.
+
+## 8. Error model
+
+Use the existing transport-independent error model.
+
+Ensure the non-finite category can later map cleanly to:
+
+`NON_FINITE_RESULT`
+
+without introducing HTTP concerns now.
+
+Do not expose Go `math` internals or raw runtime messages as future API messages.
+
+## 9. Task preservation
+
+Do not regress TASK-GO-001 through TASK-GO-005.
+
+Do not modify later task statuses.
+
+## 10. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Report:
+
+* number of tests
+* test result
+* vet result
+* build result
+* dependency result
+
+Confirm no third-party production dependency exists.
+
+## 11. Task tracking
+
+Update only:
+
+`TASK-GO-006`
+
+Mark it Complete only if its Verification and Definition of Done are fully satisfied.
+
+Do not change TASK-GO-007 or later tasks.
+
+## 12. Prompt audit
+
+Update P012 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-006 execution result
+* files created/modified
+* finite-result invariant introduced
+* representative overflow behavior
+* error-precedence behavior
+* tests/results
+* vet result
+* build result
+* dependency result
+* task status
+* confirmation that REST calculator API, frontend, Java, Docker, and parity tooling were not implemented
+
+Do not rewrite earlier prompts/outcomes.
+
+## 13. Required report
+
+After implementation show:
+
+1. files created/modified
+2. concise explanation of where the finite-result invariant is enforced
+3. representative overflow test/result
+4. division-by-zero precedence test/result
+5. negative-square-root precedence test/result
+6. representative regression results
+7. `go test ./...`
+8. `go vet ./...`
+9. `go build ./...`
+10. `go list -m all`
+11. `git diff --stat`
+12. `git status`
+13. remaining work beginning with TASK-GO-007
+14. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-006 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-006`. Modified `backend-go/internal/expression/parser.go` to add the transport-independent `ErrNonFiniteResult` category and enforce the finite-success invariant once at the completed evaluator boundary with standard-library `math.IsNaN` and `math.IsInf`; modified `backend-go/internal/expression/evaluator_test.go` with finite-success, overflow, specific-error-precedence, unsupported non-finite syntax, and regression tests; modified `TASKS.md` to mark only TASK-GO-006 complete; and modified `docs/ai-prompts.md` to record P012 and this outcome. No new application file, package, dependency, DTO, or transport layer was created. A successful `Evaluate` call can no longer return NaN or positive/negative infinity. Parser/domain errors occur before the boundary check, so `(10 ^ 1000) / 0` remains `ErrDivisionByZero` and `sqrt(-(10 ^ 1000))` remains `ErrInvalidDomain`; `math.Pow` NaN from an unsupported real exponent such as `(-1) ^ 0.5` is also classified specifically as `ErrInvalidDomain`. Valid exponentiation overflow (`10 ^ 1000`), multiplication overflow (`(10 ^ 200) * (10 ^ 200)`), and negative overflow return `ErrNonFiniteResult`. Textual `NaN`, `Inf`, `Infinity`, and scientific notation remain `ErrInvalidExpression`. The first test run had one failing test because its proposed 200-digit “non-finite literal” fixture is actually the finite value `1e200`; that invalid expectation was corrected into a positive test proving a maximum-length 256-digit literal remains finite, while operation-based overflow tests were retained. After correction, the full suite contains 20 top-level Go tests and 109 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .`, `go test ./...`, `go vet ./...`, and `go build ./...` each completed with exit code 0; tests passed for `cmd/server` and `internal/expression`. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-006 is Complete and TASK-GO-007 and later remain unchanged. The REST calculator API, JSON handling, HTTP error mapping, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.

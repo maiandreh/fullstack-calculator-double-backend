@@ -15,6 +15,7 @@ var (
 	ErrInvalidExpression = errors.New("invalid expression")
 	ErrDivisionByZero    = errors.New("division by zero")
 	ErrInvalidDomain     = errors.New("invalid domain")
+	ErrNonFiniteResult   = errors.New("non-finite result")
 )
 
 // Parse validates an expression against the approved closed grammar.
@@ -46,6 +47,9 @@ func parse(input string, evaluate bool) (float64, error) {
 	}
 	if parser.current().kind != tokenEOF {
 		return 0, ErrInvalidExpression
+	}
+	if evaluate && (math.IsNaN(value) || math.IsInf(value, 0)) {
+		return 0, ErrNonFiniteResult
 	}
 
 	return value, nil
@@ -266,6 +270,9 @@ func (p *parser) parsePower() (float64, error) {
 		}
 		if p.evaluate {
 			left = math.Pow(left, right)
+			if math.IsNaN(left) {
+				return 0, ErrInvalidDomain
+			}
 		}
 	}
 	return left, nil

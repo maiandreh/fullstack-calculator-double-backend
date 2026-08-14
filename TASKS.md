@@ -86,7 +86,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Detect non-finite literals/results and distinguish `NON_FINITE_RESULT` from more specific division-by-zero and invalid-domain errors, including mathematically unsupported real outcomes.
 - **Verification required:** Direct tests for overflow/non-finite results, invalid real domains, specific-error precedence, and finite decimal results.
 - **Definition of Done:** No domain success can contain NaN or infinity; canonical domain categories are deterministic and tested.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-007 — Expose Go REST contract
 

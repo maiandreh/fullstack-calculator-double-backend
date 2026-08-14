@@ -2,6 +2,8 @@ package expression_test
 
 import (
 	"errors"
+	"math"
+	"strings"
 	"testing"
 
 	"github.com/maiandreh/fullstack-calculator-double-backend/backend-go/internal/expression"
@@ -137,6 +139,74 @@ func TestEvaluateRejectsNegativeSquareRootDomain(t *testing.T) {
 
 func TestEvaluateRejectsMalformedPercentageAndSquareRoot(t *testing.T) {
 	for _, input := range []string{"sqrt 9", "sqrt()", "sqrt(9", "sin(9)", "%20", "20%20", "√9"} {
+		t.Run(input, func(t *testing.T) {
+			_, err := expression.Evaluate(input)
+			if !errors.Is(err, expression.ErrInvalidExpression) {
+				t.Fatalf("Evaluate(%q) error = %v, want ErrInvalidExpression", input, err)
+			}
+		})
+	}
+}
+
+func TestEvaluateReturnsOnlyFiniteSuccess(t *testing.T) {
+	for _, input := range []string{
+		"2 + 3 * 4",
+		"0.1 + 0.2",
+		"2 ^ -2",
+		"sqrt(9 + 7)",
+		strings.Repeat("9", 256),
+	} {
+		t.Run(input, func(t *testing.T) {
+			result, err := expression.Evaluate(input)
+			if err != nil {
+				t.Fatalf("Evaluate(%q) error = %v", input, err)
+			}
+			if math.IsNaN(result) || math.IsInf(result, 0) {
+				t.Fatalf("Evaluate(%q) returned non-finite success %v", input, result)
+			}
+		})
+	}
+}
+
+func TestEvaluateRejectsNonFiniteResults(t *testing.T) {
+	tests := map[string]string{
+		"exponentiation overflow": "10 ^ 1000",
+		"multiplication overflow": "(10 ^ 200) * (10 ^ 200)",
+		"negative overflow":       "-(10 ^ 1000)",
+	}
+
+	for name, input := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := expression.Evaluate(input)
+			if !errors.Is(err, expression.ErrNonFiniteResult) {
+				t.Fatalf("Evaluate(%q) result = %v, error = %v, want ErrNonFiniteResult", input, result, err)
+			}
+		})
+	}
+}
+
+func TestEvaluatePreservesSpecificErrorPrecedence(t *testing.T) {
+	tests := map[string]struct {
+		expression string
+		want       error
+	}{
+		"division by zero":          {expression: "(10 ^ 1000) / 0", want: expression.ErrDivisionByZero},
+		"negative square root":      {expression: "sqrt(-(10 ^ 1000))", want: expression.ErrInvalidDomain},
+		"unsupported real exponent": {expression: "(-1) ^ 0.5", want: expression.ErrInvalidDomain},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := expression.Evaluate(test.expression)
+			if !errors.Is(err, test.want) {
+				t.Fatalf("Evaluate(%q) error = %v, want %v", test.expression, err, test.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateRejectsUnsupportedNonFiniteSyntax(t *testing.T) {
+	for _, input := range []string{"NaN", "Inf", "Infinity", "1e309"} {
 		t.Run(input, func(t *testing.T) {
 			_, err := expression.Evaluate(input)
 			if !errors.Is(err, expression.ErrInvalidExpression) {
