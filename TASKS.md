@@ -64,7 +64,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Unary plus/minus, signed operands, right-associative exponentiation, `-2 ^ 2 = -4`, and `(-2) ^ 2 = 4`.
 - **Verification required:** Direct evaluator tests for all listed criteria plus signed exponents and grouping consistent with the exact grammar.
 - **Definition of Done:** Unary and exponentiation behavior matches `SPEC.md`, including associativity and precedence, with no third-party evaluator.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-005 — Implement percentage and square root
 

@@ -2,6 +2,7 @@ package expression
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"unicode"
 	"unicode/utf8"
@@ -258,11 +259,12 @@ func (p *parser) parsePower() (float64, error) {
 		return 0, err
 	}
 	if p.match(tokenPower) {
-		if _, err := p.parseUnary(true); err != nil {
+		right, err := p.parseUnary(true)
+		if err != nil {
 			return 0, err
 		}
 		if p.evaluate {
-			return 0, ErrInvalidExpression
+			left = math.Pow(left, right)
 		}
 	}
 	return left, nil

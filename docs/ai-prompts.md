@@ -4086,3 +4086,335 @@ Stop after TASK-GO-003 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-003`. Created `backend-go/internal/expression/evaluator_test.go`; modified `backend-go/internal/expression/parser.go` to add the transport-independent `Evaluate(string) (float64, error)` domain entry point and `ErrDivisionByZero`, modified `TASKS.md` to mark only TASK-GO-003 complete, and modified `docs/ai-prompts.md` to record P009 and this outcome. The existing recursive-descent parser now performs direct float64 evaluation in evaluation mode while `Parse` remains syntax-only. Addition/subtraction and multiplication/division are evaluated at their existing grammar levels, preserving multiplication/division precedence, grouping override, and left associativity. Numeric lexemes are converted with the Go standard library to binary64 values. Division checks the evaluated divisor with `right == 0`, which rejects positive zero, negative zero, and calculated zero using the distinct domain sentinel without returning infinity or introducing HTTP mapping. Tests cover integer, decimal, and explicit binary64 arithmetic; required precedence/grouping examples; chained subtraction/division and mixed multiplicative associativity; positive, negative, decimal, and calculated zero divisors; and representative TASK-GO-002 syntax regressions. The full suite contains 12 top-level Go tests and 65 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-003 is Complete and TASK-GO-004 and later remain unchanged. Exponentiation, percentage, square-root evaluation, general finite-result enforcement, the REST calculator API, frontend, Java, Docker, and parity tooling were not implemented. The existing health endpoint and closed grammar behavior remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.
+
+## P010
+
+### Prompt ID
+
+P010
+
+### Phase
+
+Implementation — Go Unary and Exponentiation Semantics
+
+### Objective
+
+Execute only `TASK-GO-004` from `TASKS.md`: implement unary plus/minus and exponentiation semantics in the Go expression evaluator while preserving the exact precedence and associativity defined by `SPEC.md`.
+
+### Prompt
+
+```text
+Prompt ID: P010
+
+Phase: Implementation — Go Unary and Exponentiation Semantics
+
+Objective:
+Execute only `TASK-GO-004` from `TASKS.md`: implement unary plus/minus and exponentiation semantics in the Go expression evaluator while preserving the exact precedence and associativity defined by `SPEC.md`.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and any other ADR directly referenced by `TASK-GO-004`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P010` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-004 — Implement unary signs and exponentiation`
+
+Do NOT implement:
+
+* percentage
+* square root
+* REST calculator API
+* frontend
+* Java
+* Docker
+* parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the existing parser structure cannot satisfy the approved precedence semantics cleanly, stop and explain the conflict before changing architecture.
+
+## 1. Unary signs
+
+Support unary:
+
+* `+`
+* `-`
+
+Examples:
+
+`-2 = -2`
+
+`+2 = 2`
+
+`3 * -2 = -6`
+
+Unary signs must participate according to the exact precedence rules in `SPEC.md`.
+
+Do not treat repeated invalid syntax as valid merely because unary signs exist.
+
+In particular, preserve any `SPEC.md` rule that classifies forms such as:
+
+`2 ++ 3`
+
+as invalid.
+
+## 2. Exponentiation
+
+Implement:
+
+`a ^ b`
+
+using binary64-equivalent exponentiation semantics.
+
+Exponentiation must be right-associative.
+
+Therefore:
+
+`2 ^ 3 ^ 2`
+
+must evaluate as:
+
+`2 ^ (3 ^ 2)`
+
+and return:
+
+`512`
+
+Do not implement exponentiation as left-associative.
+
+## 3. Unary-minus precedence
+
+This behavior is mandatory and must not be library-dependent.
+
+Required:
+
+`-2 ^ 2 = -4`
+
+because it means:
+
+`-(2 ^ 2)`
+
+Required:
+
+`(-2) ^ 2 = 4`
+
+because grouping explicitly makes the base negative.
+
+Add direct tests proving both cases.
+
+## 4. Signed exponents
+
+Support valid signed exponents where permitted by the grammar.
+
+Representative behavior:
+
+`2 ^ -2 = 0.25`
+
+Ensure this behavior does not break the required precedence relationship between unary signs and exponentiation.
+
+If the currently approved grammar makes any signed-exponent form ambiguous, follow `SPEC.md` exactly and report the interpretation used.
+
+Do not change the specification.
+
+## 5. Parser structure
+
+Extend the current recursive-descent/equivalent precedence structure minimally.
+
+The resulting implementation must make the precedence model visible and maintainable.
+
+Do not introduce:
+
+* expression libraries
+* parser generators
+* generic operator registries
+* strategy/factory patterns
+* AST/visitor infrastructure without a demonstrated need
+
+Direct evaluation during parsing remains acceptable.
+
+## 6. Existing semantics preservation
+
+Do not regress:
+
+* decimal literals
+* whitespace behavior
+* parentheses
+* closed grammar
+* complete input consumption
+* addition
+* subtraction
+* multiplication
+* division
+* left associativity of basic binary operators
+* arithmetic precedence
+* division-by-zero behavior
+
+Previously invalid expressions must remain invalid unless `SPEC.md` explicitly makes them valid through unary syntax.
+
+## 7. Exponentiation domain behavior
+
+This task implements exponentiation syntax and numeric calculation.
+
+Do not prematurely complete the later finite-result task.
+
+However:
+
+* do not intentionally return an invalid parser state
+* preserve language-native floating-point behavior internally
+* leave comprehensive NaN/Infinity classification to `TASK-GO-006`
+
+If exponentiation naturally exposes a mathematically unsupported real-domain case that `SPEC.md` already classifies, preserve a deterministic domain error if required, but do not broaden this task beyond what is necessary.
+
+Report any such overlap explicitly.
+
+## 8. Tests
+
+Derive tests from `TASK-GO-004` acceptance criteria.
+
+Add direct evaluator tests covering at minimum:
+
+### Unary
+
+* unary negative
+* unary positive
+* unary negative in multiplication or equivalent valid position
+
+### Exponentiation
+
+* simple exponentiation: `2 ^ 3 = 8`
+* zero exponent where supported: `5 ^ 0 = 1`
+* decimal result where appropriate
+
+### Right associativity
+
+* `2 ^ 3 ^ 2 = 512`
+
+### Unary/power precedence
+
+* `-2 ^ 2 = -4`
+* `(-2) ^ 2 = 4`
+
+### Signed exponent
+
+* `2 ^ -2 = 0.25`
+
+### Regression
+
+* representative existing precedence behavior
+* representative existing syntax-invalid behavior
+* division-by-zero behavior remains unchanged
+
+Prefer table-driven tests where useful.
+
+Do not add HTTP tests.
+
+## 9. Error behavior
+
+Do not introduce HTTP-specific errors.
+
+Parser/domain errors must remain transport-independent.
+
+Do not expose implementation-specific math/parser diagnostics as future API messages.
+
+## 10. Existing tasks
+
+Do not regress:
+
+* TASK-GO-001
+* TASK-GO-002
+* TASK-GO-003
+
+Do not modify later task statuses.
+
+## 11. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Report:
+
+* number of tests
+* test result
+* vet result
+* build result
+* dependency result
+
+Confirm no third-party production dependency exists.
+
+## 12. Task tracking
+
+Update only:
+
+`TASK-GO-004`
+
+Mark it Complete only when its Definition of Done is fully satisfied.
+
+Do not change TASK-GO-005 or later tasks.
+
+## 13. Prompt audit
+
+Update P010 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-004 result
+* files created/modified
+* unary semantics implemented
+* exponentiation semantics implemented
+* associativity behavior
+* `-2 ^ 2` behavior
+* `(-2) ^ 2` behavior
+* signed exponent behavior
+* tests/results
+* vet result
+* build result
+* dependency result
+* task status
+* confirmation that percentage, square root, REST calculator API, frontend, Java, Docker, and parity tooling were not implemented
+
+Do not rewrite previous prompts/outcomes.
+
+## 14. Required report
+
+After implementation show:
+
+1. files created/modified
+2. concise explanation of the parser precedence structure
+3. test/result for `2 ^ 3 ^ 2`
+4. test/result for `-2 ^ 2`
+5. test/result for `(-2) ^ 2`
+6. test/result for `2 ^ -2`
+7. representative regression results
+8. `go test ./...`
+9. `go vet ./...`
+10. `go build ./...`
+11. `go list -m all`
+12. `git diff --stat`
+13. `git status`
+14. remaining work beginning with TASK-GO-005
+15. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-004 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-004`. Modified `backend-go/internal/expression/parser.go` to evaluate exponentiation with the Go standard library `math.Pow` and modified `backend-go/internal/expression/evaluator_test.go` with direct unary, exponentiation, associativity, and precedence tests; modified `TASKS.md` to mark only TASK-GO-004 complete and modified `docs/ai-prompts.md` to record P010 and this outcome. No new application file or package was created. The existing recursive-descent structure was preserved: additive calls multiplicative, multiplicative calls unary, unary applies a leading sign to the complete power result, power parses a postfix base and recursively obtains an optional exponent through unary, and grouping remains primary syntax. This implements unary plus/minus and signed multiplicative operands, makes exponentiation right-associative, permits signed exponents, and preserves the specified unary/power relationship. Direct tests passed for `2 ^ 3 ^ 2 = 512`, `-2 ^ 2 = -4`, `(-2) ^ 2 = 4`, and `2 ^ -2 = 0.25`, along with simple/zero/decimal powers and unary `-2`, `+2`, and `3 * -2`. Existing arithmetic precedence, left associativity, division-by-zero, closed grammar, and `2 ++ 3` rejection tests also passed. The full suite contains 13 top-level Go tests and 75 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. An auxiliary `go test -list` inventory was initially invoked from the repository root and failed because that directory is outside the Go module; rerunning it from `backend-go/` succeeded and listed all 13 tests. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-004 is Complete and TASK-GO-005 and later remain unchanged. `math.Pow` currently preserves native float64 NaN/infinity behavior for unsupported real-domain and overflow cases; their comprehensive classification is deliberately deferred to the approved TASK-GO-006 rather than implemented prematurely. Percentage, square-root evaluation, the REST calculator API, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.

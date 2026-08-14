@@ -64,6 +64,36 @@ func TestEvaluatePrecedenceGroupingAndAssociativity(t *testing.T) {
 	}
 }
 
+func TestEvaluateUnaryAndExponentiation(t *testing.T) {
+	tests := map[string]struct {
+		expression string
+		want       float64
+	}{
+		"unary negative":                   {expression: "-2", want: -2},
+		"unary positive":                   {expression: "+2", want: 2},
+		"signed multiplicative operand":    {expression: "3 * -2", want: -6},
+		"simple exponentiation":            {expression: "2 ^ 3", want: 8},
+		"zero exponent":                    {expression: "5 ^ 0", want: 1},
+		"decimal exponent result":          {expression: "9 ^ 0.5", want: 3},
+		"right-associative exponentiation": {expression: "2 ^ 3 ^ 2", want: 512},
+		"unary minus below power":          {expression: "-2 ^ 2", want: -4},
+		"grouped negative base":            {expression: "(-2) ^ 2", want: 4},
+		"signed exponent":                  {expression: "2 ^ -2", want: 0.25},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := expression.Evaluate(test.expression)
+			if err != nil {
+				t.Fatalf("Evaluate(%q) error = %v", test.expression, err)
+			}
+			if got != test.want {
+				t.Fatalf("Evaluate(%q) = %v, want %v", test.expression, got, test.want)
+			}
+		})
+	}
+}
+
 func TestEvaluateRejectsDivisionByZero(t *testing.T) {
 	tests := map[string]string{
 		"integer positive zero": "1 / 0",
