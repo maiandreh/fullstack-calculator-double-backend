@@ -4418,3 +4418,346 @@ Stop after TASK-GO-004 and wait for human review.
 ### Outcome
 
 Completed `TASK-GO-004`. Modified `backend-go/internal/expression/parser.go` to evaluate exponentiation with the Go standard library `math.Pow` and modified `backend-go/internal/expression/evaluator_test.go` with direct unary, exponentiation, associativity, and precedence tests; modified `TASKS.md` to mark only TASK-GO-004 complete and modified `docs/ai-prompts.md` to record P010 and this outcome. No new application file or package was created. The existing recursive-descent structure was preserved: additive calls multiplicative, multiplicative calls unary, unary applies a leading sign to the complete power result, power parses a postfix base and recursively obtains an optional exponent through unary, and grouping remains primary syntax. This implements unary plus/minus and signed multiplicative operands, makes exponentiation right-associative, permits signed exponents, and preserves the specified unary/power relationship. Direct tests passed for `2 ^ 3 ^ 2 = 512`, `-2 ^ 2 = -4`, `(-2) ^ 2 = 4`, and `2 ^ -2 = 0.25`, along with simple/zero/decimal powers and unary `-2`, `+2`, and `3 * -2`. Existing arithmetic precedence, left associativity, division-by-zero, closed grammar, and `2 ++ 3` rejection tests also passed. The full suite contains 13 top-level Go tests and 75 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. An auxiliary `go test -list` inventory was initially invoked from the repository root and failed because that directory is outside the Go module; rerunning it from `backend-go/` succeeded and listed all 13 tests. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-004 is Complete and TASK-GO-005 and later remain unchanged. `math.Pow` currently preserves native float64 NaN/infinity behavior for unsupported real-domain and overflow cases; their comprehensive classification is deliberately deferred to the approved TASK-GO-006 rather than implemented prematurely. Percentage, square-root evaluation, the REST calculator API, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.
+
+## P011
+
+### Prompt ID
+
+P011
+
+### Phase
+
+Implementation — Go Percentage and Square Root
+
+### Objective
+
+Execute only `TASK-GO-005` from `TASKS.md`: implement postfix percentage semantics and unary square-root semantics in the Go expression evaluator, preserving the exact behavior defined by `SPEC.md`.
+
+### Prompt
+
+```text
+Prompt ID: P011
+
+Phase: Implementation — Go Percentage and Square Root
+
+Objective:
+Execute only `TASK-GO-005` from `TASKS.md`: implement postfix percentage semantics and unary square-root semantics in the Go expression evaluator, preserving the exact behavior defined by `SPEC.md`.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and any other ADR directly referenced by `TASK-GO-005`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P011` in `docs/ai-prompts.md` before modifying application files.
+
+Implement only:
+
+`TASK-GO-005 — Implement percentage and square root`
+
+Do NOT implement:
+
+* REST calculator API
+* request/response DTOs
+* HTTP error mapping
+* frontend
+* Java
+* Docker
+* parity tooling
+* the complete non-finite-result quality gate from TASK-GO-006
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the current parser structure cannot satisfy the approved semantics cleanly, stop and report the conflict before changing architecture.
+
+## 1. Postfix percentage semantics
+
+Implement percentage as unary postfix syntax.
+
+The exact semantics are:
+
+`x% = x / 100`
+
+Required examples:
+
+`20% = 0.2`
+
+`150 * 20% = 30`
+
+`100 + 20% = 100.2`
+
+Do NOT implement consumer-calculator context-sensitive percentage behavior.
+
+Specifically:
+
+`100 + 20%`
+
+must NOT become `120`.
+
+Percentage must remain compositional expression syntax.
+
+## 2. Percentage precedence
+
+Preserve the precedence defined by `SPEC.md`.
+
+Postfix `%` binds to the immediately preceding valid expression/primary according to the approved grammar.
+
+Representative examples should behave consistently with the specification.
+
+Do not allow percentage handling to redefine arithmetic or exponentiation precedence.
+
+If repeated postfix percentages such as:
+
+`20%%`
+
+are not explicitly permitted by `SPEC.md`, reject them rather than inventing semantics.
+
+Follow `SPEC.md` exactly.
+
+## 3. Square root
+
+Implement canonical:
+
+`sqrt(expression)`
+
+Square root is unary and accepts a full expression argument.
+
+Required:
+
+`sqrt(81) = 9`
+
+`sqrt(9 + 7) = 4`
+
+Nested/compound grouping must continue to behave according to the approved grammar.
+
+Do not introduce alternate backend syntax such as Unicode `√`.
+
+The frontend may later present `√`, but the backend canonical expression remains `sqrt(...)`.
+
+## 4. Square-root domain behavior
+
+The calculator supports real numbers only.
+
+If the evaluated square-root argument is negative, return the approved transport-independent domain error category corresponding to `INVALID_DOMAIN`.
+
+Required invalid behavior:
+
+`sqrt(-1)`
+
+must fail with the approved domain category.
+
+Do not return NaN as a successful result.
+
+Do not implement complex numbers.
+
+Do not map this error to HTTP yet.
+
+## 5. Parser architecture
+
+Extend the current bounded parser minimally.
+
+Preserve:
+
+* right-associative exponentiation
+* unary sign precedence
+* postfix percentage precedence
+* grouping
+* complete input consumption
+* closed grammar
+
+Do not introduce:
+
+* expression libraries
+* parser generators
+* generic AST frameworks
+* visitor patterns
+* function registries for unsupported future functions
+
+Square root may be recognized explicitly as the only approved function token.
+
+Do not generalize function parsing for hypothetical future functions unless the current code structure makes a minimal generic mechanism clearly simpler.
+
+## 6. Existing semantics preservation
+
+Do not regress:
+
+* decimal literals
+* whitespace
+* parentheses
+* invalid syntax rejection
+* addition
+* subtraction
+* multiplication
+* division
+* division-by-zero behavior
+* unary plus/minus
+* exponentiation
+* exponentiation right associativity
+* `-2 ^ 2 = -4`
+* `(-2) ^ 2 = 4`
+* signed exponent behavior
+
+## 7. Tests
+
+Derive tests from TASK-GO-005 acceptance criteria.
+
+Add direct evaluator/domain tests covering at minimum:
+
+### Percentage
+
+* `20% = 0.2`
+* `150 * 20% = 30`
+* `100 + 20% = 100.2`
+* percentage participating with other approved operators where useful
+
+### Square root
+
+* `sqrt(81) = 9`
+* `sqrt(9 + 7) = 4`
+* square root of a decimal where useful
+* nested/grouped argument where relevant
+
+### Invalid domain
+
+* `sqrt(-1)` returns the approved domain error category
+
+### Syntax
+
+* malformed `sqrt` syntax
+* unsupported function behavior remains rejected
+* malformed percentage syntax remains rejected according to SPEC
+
+### Regression
+
+Include representative checks for:
+
+* arithmetic precedence
+* right-associative exponentiation
+* unary/power precedence
+* division by zero
+* invalid syntax
+
+Prefer table-driven tests where they improve readability.
+
+Do not add HTTP tests.
+
+## 8. Error handling
+
+Use transport-independent domain error categories.
+
+Square-root negative domain must be distinguishable from:
+
+* invalid expression syntax
+* division by zero
+
+Do not expose implementation-specific `math` diagnostics as future API messages.
+
+Do not implement HTTP status mapping.
+
+## 9. Finite-result boundary
+
+TASK-GO-006 remains responsible for the complete non-finite-result guarantee.
+
+However, this task must not intentionally allow `sqrt(-1)` to escape as successful NaN.
+
+Use the more specific invalid-domain category as required by SPEC.
+
+Do not prematurely mark TASK-GO-006 complete.
+
+## 10. Existing task preservation
+
+Do not regress TASK-GO-001 through TASK-GO-004.
+
+Do not modify later task statuses.
+
+## 11. Verification
+
+Run:
+
+`gofmt -w .`
+
+`go test ./...`
+
+`go vet ./...`
+
+`go build ./...`
+
+`go list -m all`
+
+Report:
+
+* number of tests
+* test result
+* vet result
+* build result
+* dependency result
+
+Confirm no third-party production dependency exists.
+
+## 12. Task tracking
+
+Update only:
+
+`TASK-GO-005`
+
+Mark it Complete only if its Definition of Done is fully satisfied.
+
+Do not change TASK-GO-006 or later tasks.
+
+## 13. Prompt audit
+
+Update P011 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-GO-005 execution result
+* files created/modified
+* percentage semantics implemented
+* `20%` result
+* `150 * 20%` result
+* `100 + 20%` result
+* square-root semantics implemented
+* compound square-root result
+* negative-domain behavior
+* tests/results
+* vet result
+* build result
+* dependency result
+* task status
+* confirmation that REST calculator API, frontend, Java, Docker, and parity tooling were not implemented
+
+Do not rewrite previous prompts/outcomes.
+
+## 14. Required report
+
+After implementation show:
+
+1. files created/modified
+2. concise parser changes
+3. result/test for `20%`
+4. result/test for `150 * 20%`
+5. result/test for `100 + 20%`
+6. result/test for `sqrt(81)`
+7. result/test for `sqrt(9 + 7)`
+8. invalid-domain result for `sqrt(-1)`
+9. representative regression results
+10. `go test ./...`
+11. `go vet ./...`
+12. `go build ./...`
+13. `go list -m all`
+14. `git diff --stat`
+15. `git status`
+16. remaining work beginning with TASK-GO-006
+17. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-GO-005 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-GO-005`. Modified `backend-go/internal/expression/parser.go` to implement postfix percentage and explicit square-root evaluation, modified `backend-go/internal/expression/evaluator_test.go` with direct percentage, square-root, invalid-domain, malformed-syntax, and regression tests, modified `TASKS.md` to mark only TASK-GO-005 complete, and modified `docs/ai-prompts.md` to record P011 and this outcome. No new application file, package, dependency, DTO, or transport layer was created. At the existing postfix grammar level, every `%` divides the current value by 100, preserving precedence and compositional semantics: `20% = 0.2`, `150 * 20% = 30`, and `100 + 20% = 100.2`, not 120. Because SPEC-EXPR-004 explicitly defines `postfix ::= primary ("%")*`, repeated percentages are permitted and tested (`20%% = 0.002`). The existing explicit `sqrt` primary now evaluates its complete expression argument with `math.Sqrt`; `sqrt(81) = 9`, `sqrt(9 + 7) = 4`, decimal/grouped/nested arguments pass, and negative evaluated arguments return the distinct transport-independent `ErrInvalidDomain` rather than successful NaN. Malformed `sqrt`, unsupported functions and Unicode square root, leading/misplaced percentage, and invalid trailing percentage content remain `ErrInvalidExpression`. Existing arithmetic precedence, right-associative exponentiation, unary/power precedence, signed exponents, division-by-zero, closed grammar, and health tests also passed. The full suite contains 16 top-level Go tests and 94 table-driven subtests. With the sandbox-required writable cache `GOCACHE=/tmp/fullstack-calculator-go-cache`, `go test ./...` passed for `cmd/server` and `internal/expression`, `go vet ./...` passed, and `go build ./...` passed. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`; no third-party production dependency or expression library was introduced. TASK-GO-005 is Complete and TASK-GO-006 and later remain unchanged. The complete non-finite-result guarantee remains deliberately deferred to TASK-GO-006. The REST calculator API, request/response DTOs, HTTP error mapping, frontend, Java, Docker, and parity tooling were not implemented. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-002, or TASKS.md.

@@ -75,7 +75,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Postfix compositional percentage, percentage precedence, `sqrt(expression)`, compound arguments, and negative-domain error.
 - **Verification required:** Direct evaluator tests for all listed criteria and representative composition; confirm `100 + 20% = 100.2`.
 - **Definition of Done:** Percentage and square-root behavior, including invalid domain, conforms exactly and all domain tests pass.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-GO-006 — Enforce finite results
 

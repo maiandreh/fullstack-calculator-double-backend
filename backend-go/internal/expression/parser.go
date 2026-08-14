@@ -14,6 +14,7 @@ var (
 	ErrInvalidRequest    = errors.New("invalid request")
 	ErrInvalidExpression = errors.New("invalid expression")
 	ErrDivisionByZero    = errors.New("division by zero")
+	ErrInvalidDomain     = errors.New("invalid domain")
 )
 
 // Parse validates an expression against the approved closed grammar.
@@ -275,12 +276,10 @@ func (p *parser) parsePostfix() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	matched := false
 	for p.match(tokenPercent) {
-		matched = true
-	}
-	if p.evaluate && matched {
-		return 0, ErrInvalidExpression
+		if p.evaluate {
+			value /= 100
+		}
 	}
 	return value, nil
 }
@@ -309,7 +308,8 @@ func (p *parser) parsePrimary() (float64, error) {
 		if !p.match(tokenLeftParenthesis) {
 			return 0, ErrInvalidExpression
 		}
-		if _, err := p.parseExpression(); err != nil {
+		value, err := p.parseExpression()
+		if err != nil {
 			return 0, err
 		}
 		if !p.match(tokenRightParenthesis) {
@@ -318,7 +318,10 @@ func (p *parser) parsePrimary() (float64, error) {
 		if !p.evaluate {
 			return 0, nil
 		}
-		return 0, ErrInvalidExpression
+		if value < 0 {
+			return 0, ErrInvalidDomain
+		}
+		return math.Sqrt(value), nil
 	}
 	return 0, ErrInvalidExpression
 }

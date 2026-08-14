@@ -94,6 +94,58 @@ func TestEvaluateUnaryAndExponentiation(t *testing.T) {
 	}
 }
 
+func TestEvaluatePercentageAndSquareRoot(t *testing.T) {
+	tests := map[string]struct {
+		expression string
+		want       float64
+	}{
+		"percentage value":                  {expression: "20%", want: 0.2},
+		"percentage multiplication":         {expression: "150 * 20%", want: 30},
+		"compositional percentage addition": {expression: "100 + 20%", want: 100.2},
+		"repeated percentage":               {expression: "20%%", want: 0.002},
+		"percentage before exponentiation":  {expression: "200% ^ 2", want: 4},
+		"square root":                       {expression: "sqrt(81)", want: 9},
+		"compound square root":              {expression: "sqrt(9 + 7)", want: 4},
+		"decimal square root":               {expression: "sqrt(2.25)", want: 1.5},
+		"grouped square-root argument":      {expression: "sqrt((3 + 1) * 4)", want: 4},
+		"nested square root":                {expression: "sqrt(sqrt(16))", want: 2},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := expression.Evaluate(test.expression)
+			if err != nil {
+				t.Fatalf("Evaluate(%q) error = %v", test.expression, err)
+			}
+			if got != test.want {
+				t.Fatalf("Evaluate(%q) = %v, want %v", test.expression, got, test.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateRejectsNegativeSquareRootDomain(t *testing.T) {
+	for _, input := range []string{"sqrt(-1)", "sqrt(1 - 2)"} {
+		t.Run(input, func(t *testing.T) {
+			_, err := expression.Evaluate(input)
+			if !errors.Is(err, expression.ErrInvalidDomain) {
+				t.Fatalf("Evaluate(%q) error = %v, want ErrInvalidDomain", input, err)
+			}
+		})
+	}
+}
+
+func TestEvaluateRejectsMalformedPercentageAndSquareRoot(t *testing.T) {
+	for _, input := range []string{"sqrt 9", "sqrt()", "sqrt(9", "sin(9)", "%20", "20%20", "√9"} {
+		t.Run(input, func(t *testing.T) {
+			_, err := expression.Evaluate(input)
+			if !errors.Is(err, expression.ErrInvalidExpression) {
+				t.Fatalf("Evaluate(%q) error = %v, want ErrInvalidExpression", input, err)
+			}
+		})
+	}
+}
+
 func TestEvaluateRejectsDivisionByZero(t *testing.T) {
 	tests := map[string]string{
 		"integer positive zero": "1 / 0",
