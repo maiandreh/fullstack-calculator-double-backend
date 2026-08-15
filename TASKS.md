@@ -132,7 +132,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Responsibility-based display/keypad/calculator components; expression, result, and error presentation state; all committed keypad controls; clear/reset; UI backspace if represented; presentation symbols and canonical-token shaping. Never compute results.
 - **Verification required:** Interaction tests for construction, displayed expression, clear, backspace, and all required controls.
 - **Definition of Done:** Keypad builds the supported expression and clear/display behavior is tested; no frontend evaluator exists.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-FE-003 — Implement keyboard and responsive behavior
 

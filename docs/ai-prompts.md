@@ -6294,3 +6294,461 @@ Runtime dependencies are only `react` and `react-dom`. Build dependencies are Ty
 The first verification run passed tests, lint, and coverage but `npm run build` exposed two standard bootstrap configuration omissions: missing Vite ambient types for CSS/import-meta environment declarations and an explicit `.tsx` extension rejected by the strict application compiler settings. Added `src/vite-env.d.ts` with the standard `vite/client` reference and changed the application import to its extensionless form. No type checking was weakened. After correction, `npm test -- --run` passed one test in one test file; `npm run build` passed TypeScript project compilation and Vite production build; `npm run lint` passed; and `npm run coverage` passed with 100% of the single bootstrap statement and function covered. No coverage threshold was introduced. The existing root `.gitignore` already ignores `node_modules/`, `dist/`, and `coverage/`; all three generated directories were confirmed ignored and are absent from normal Git status, so `.gitignore` was not modified.
 
 The application renders only the project-identifying shell `Full-stack Calculator` and `Frontend foundation ready.` No keypad, expression behavior, keyboard calculator interaction, mathematical evaluation, API request, backend-switching behavior, Java backend, Docker, or parity tooling was implemented. `backend-go/` was not modified. TASK-FE-001 is Complete and TASK-FE-002 and all later tasks remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
+
+## P016
+
+### Prompt ID
+
+P016
+
+### Phase
+
+Implementation — Frontend Calculator Interaction
+
+### Objective
+
+Execute only `TASK-FE-002` from `TASKS.md`: implement the calculator display, expression state, and complete keypad interaction without performing mathematical evaluation or calling any backend.
+
+### Prompt
+
+```text
+Prompt ID: P016
+
+Phase: Implementation — Frontend Calculator Interaction
+
+Objective:
+Execute only `TASK-FE-002` from `TASKS.md`: implement the calculator display, expression state, and complete keypad interaction without performing mathematical evaluation or calling any backend.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-004 and any other ADR directly referenced by `TASK-FE-002`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P016` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-FE-002 — Implement display, expression state, and keypad`
+
+Do NOT implement:
+
+* REST API calls
+* backend selection behavior beyond any already-existing inert/bootstrap representation
+* result calculation
+* expression evaluation in JavaScript
+* keyboard handling
+* responsive/mobile refinements assigned to TASK-FE-003
+* Java backend
+* Docker
+* cross-backend parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If current frontend bootstrap structure conflicts with approved DESIGN, stop and report the conflict instead of silently changing architecture.
+
+## 1. Calculator UI model
+
+Replace the bootstrap-only application shell with the approved calculator interaction model.
+
+The application must visually behave like a familiar calculator rather than separate operand fields.
+
+The calculator must contain:
+
+* expression display
+* result display area
+* error display area
+* keypad
+* calculator controls
+
+Do not implement calculation results yet.
+
+The result area may remain empty until backend integration is implemented.
+
+## 2. Component boundaries
+
+Use the lightweight component decomposition approved by DESIGN.
+
+Prefer responsibilities conceptually equivalent to:
+
+* `Calculator` — owns/coordin­ates calculator UI state
+* `Display` — renders expression/result/error state
+* `Keypad` — emits calculator input actions
+
+Do not create components merely for individual buttons unless there is a concrete maintainability benefit.
+
+Do not introduce:
+
+* global state
+* React Context
+* Redux
+* custom state-management frameworks
+* service interfaces
+* frontend domain evaluator
+
+Local React state is sufficient.
+
+## 3. Expression state
+
+The frontend must maintain the calculator expression being constructed.
+
+The expression state represents canonical backend syntax.
+
+Canonical tokens include:
+
+* digits `0-9`
+* `.`
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* `(`
+* `)`
+* `sqrt(` and matching `)`
+
+The frontend may display user-friendly symbols:
+
+* `×`
+* `÷`
+* `√`
+* `xʸ`
+
+but the underlying expression state must remain compatible with the canonical syntax defined in `SPEC.md`.
+
+Do not evaluate the expression locally.
+
+## 4. Keypad controls
+
+Provide controls for all committed calculator input capabilities:
+
+### Numeric
+
+* `0`
+* `1`
+* `2`
+* `3`
+* `4`
+* `5`
+* `6`
+* `7`
+* `8`
+* `9`
+* decimal point
+
+### Basic operators
+
+* addition
+* subtraction
+* multiplication
+* division
+
+### Advanced operations
+
+* exponentiation
+* square root
+* percentage
+
+### Grouping
+
+* opening parenthesis
+* closing parenthesis
+
+### Editing/action
+
+* clear/reset
+* equals/evaluate
+* backspace if included in the approved UI interaction
+
+The equals control must exist visually but must not perform calculation yet.
+
+It may emit an evaluation action/event that will be connected in TASK-FE-004.
+
+Do not fake a result.
+
+## 5. Display behavior
+
+The display must:
+
+* show the current expression
+* show a reasonable empty/default state when no expression exists
+* support displaying the latest result when that state exists in later tasks
+* support displaying an error state when that state exists in later tasks
+
+Do not calculate or synthesize result/error behavior now.
+
+Keep the component ready for later states without speculative complexity.
+
+## 6. Input shaping
+
+This task may perform presentation/input shaping only.
+
+Allowed examples:
+
+* clicking `×` appends canonical `*`
+* clicking `÷` appends canonical `/`
+* clicking `xʸ` appends canonical `^`
+* clicking `√` appends canonical `sqrt(`
+* clicking `%` appends `%`
+* clicking `(` or `)` appends that token
+* digits append digits
+* decimal appends `.`
+
+Do not attempt to fully validate mathematical correctness in the frontend.
+
+The backend remains authoritative for grammar and evaluation.
+
+Do not silently prevent every potentially invalid sequence; the frontend is not the parser.
+
+Minor usability guards are acceptable only when they do not duplicate backend grammar semantics.
+
+## 7. Clear behavior
+
+Clear/reset must:
+
+* clear the expression
+* clear result state
+* clear error state
+
+Even if result/error are not yet produced by this task, design the state transition consistently.
+
+## 8. Backspace
+
+If backspace is included as a visible control in the approved UI:
+
+* remove the most recently entered expression unit
+* do not calculate
+* clear stale result/error state if necessary
+
+For canonical multi-character UI tokens such as `sqrt(`, prefer UX behavior that treats a single square-root keypad action coherently rather than leaving awkward partial text when practical.
+
+Keep the implementation simple.
+
+## 9. Equals behavior
+
+The equals button must be present.
+
+At this stage:
+
+* it must not evaluate locally
+* it must not call the API yet
+* it may invoke a placeholder callback/action boundary needed by the future API integration
+* avoid fake loading or fake success behavior
+
+Do not introduce networking in this task.
+
+## 10. Accessibility
+
+Use semantic HTML controls.
+
+Buttons must have accessible labels that make their purpose clear.
+
+Do not rely solely on symbols where an accessible label is needed, especially for:
+
+* square root
+* exponentiation
+* multiplication
+* division
+* clear
+* equals
+* backspace
+
+The expression/result region should be understandable to assistive technology.
+
+Do not over-engineer ARIA when native semantics are sufficient.
+
+## 11. Styling
+
+Create a clean calculator-like layout.
+
+Priorities:
+
+* recognizable calculator interface
+* strong visual hierarchy for display
+* clear keypad grouping
+* easy-to-hit buttons
+* readable expression
+* obvious equals/clear controls
+
+Do not spend this phase on elaborate visual polish.
+
+Responsive/mobile-specific refinements belong primarily to TASK-FE-003, although the base CSS must not make later responsiveness difficult.
+
+Do not add a CSS framework.
+
+## 12. Tests
+
+Derive tests from TASK-FE-002 acceptance criteria.
+
+Use React Testing Library and user-event.
+
+Cover at minimum:
+
+### Keypad construction
+
+* digit entry
+* decimal entry
+* addition
+* subtraction
+* multiplication presentation → canonical `*`
+* division presentation → canonical `/`
+* exponentiation presentation → canonical `^`
+* percentage
+* parentheses
+* square root presentation → canonical `sqrt(`
+
+### Display
+
+* current expression is visible
+* expression updates in entered order
+
+### Clear
+
+* clear removes the current expression
+* clear resets result/error state where represented
+
+### Backspace
+
+* removes the most recent user-entered expression unit if implemented
+
+### No evaluation
+
+* pressing equals does not perform local arithmetic
+* no network request is made in this task
+
+Tests must verify observable behavior rather than component internals.
+
+Do not use snapshots as the primary test strategy.
+
+## 13. No frontend calculator engine
+
+Explicitly verify during review that no code:
+
+* parses the expression mathematically
+* computes arithmetic results
+* reproduces backend precedence rules
+* evaluates percentages
+* evaluates square root
+* evaluates exponentiation
+
+The frontend constructs expression syntax only.
+
+If any utility begins resembling an evaluator, remove or simplify it.
+
+## 14. Existing bootstrap preservation
+
+Do not regress TASK-FE-001.
+
+The frontend must continue to:
+
+* build
+* test
+* lint
+* generate coverage
+* use approved dependencies only
+
+Do not modify `backend-go/`.
+
+## 15. Verification
+
+Run from `frontend/`:
+
+`npm test -- --run`
+
+`npm run build`
+
+`npm run lint`
+
+`npm run coverage`
+
+Report:
+
+* total tests
+* failures
+* build result
+* lint result
+* coverage summary
+
+Inspect:
+
+`npm ls --depth=0`
+
+Confirm no unapproved dependency was introduced.
+
+## 16. Task tracking
+
+Update only:
+
+`TASK-FE-002`
+
+Mark it Complete only if its full Definition of Done is satisfied.
+
+Do not modify TASK-FE-003 or later task statuses.
+
+## 17. Prompt audit outcome
+
+Update P016 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-FE-002 result
+* files created/modified
+* component structure introduced
+* expression-state approach
+* keypad capabilities implemented
+* display behavior
+* clear/backspace behavior
+* tests/results
+* build result
+* lint result
+* coverage result
+* dependency result
+* task status
+* confirmation that no mathematical evaluation was implemented
+* confirmation that no API communication was implemented
+* confirmation that backend-go was not modified
+
+Do not rewrite previous prompts/outcomes.
+
+## 18. Required report
+
+After implementation report:
+
+1. files created/modified
+2. resulting component structure
+3. concise expression-state explanation
+4. mapping between presentation buttons and canonical expression tokens
+5. representative keypad tests
+6. clear/backspace tests
+7. evidence that equals does not evaluate locally
+8. test result
+9. build result
+10. lint result
+11. coverage result
+12. dependency summary
+13. `git diff --stat`
+14. `git status`
+15. TASK-FE-002 status
+16. remaining work beginning with TASK-FE-003
+17. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-FE-002 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-FE-002`. Created `frontend/src/components/Calculator.tsx`, `Display.tsx`, and `Keypad.tsx`; modified `frontend/src/App.tsx` to render the calculator, `frontend/src/App.css` with a clean calculator-style display/keypad layout, and `frontend/src/App.test.tsx` with focused observable interaction tests. Modified only TASK-FE-002 in `TASKS.md` to Complete and recorded P016 and this outcome in `docs/ai-prompts.md`.
+
+`Calculator` owns local React state for the canonical expression plus nullable future result/error display state; `Display` renders accessible expression, result, and error regions; `Keypad` emits fixed input, clear, backspace, and evaluate actions through props. No global state, context, service layer, evaluator, or individual-button components were introduced. All digits, decimal point, addition, subtraction, multiplication, division, exponentiation, percentage, parentheses, square root, clear, backspace, and equals controls are present as semantic buttons with accessible names. Presentation buttons shape input only: `×` appends `*`, `÷` appends `/`, `xʸ` appends `^`, and `√` appends `sqrt(`; other approved tokens append directly. Expression order is preserved without frontend grammar validation. Empty expression displays `0`; result and error areas remain empty and ready for later integration.
+
+Clear resets expression, result, and error state. Backspace removes the latest character and treats a trailing `sqrt(` inserted by one keypad action as one coherent unit. Equals invokes an intentionally inert action boundary: it neither changes the expression/result nor performs arithmetic or network communication. Tests explicitly stub global `fetch`, press equals after constructing `2+3`, and prove the canonical expression remains `2+3`, the result stays empty, and fetch is never called.
+
+`npm test -- --run` passed one test file with six tests and zero failures. The tests cover the complete keypad, default/current display, ordered digit/decimal/basic input, every presentation-to-canonical mapping, clear, character and square-root-unit backspace, and no-evaluation/no-network equals behavior. `npm run build` passed strict TypeScript compilation and the Vite production build. `npm run lint` passed. `npm run coverage` passed with 100% statements (25/25), branches (4/4), functions (12/12), and lines (24/24); no threshold was added. `npm ls --depth=0` passed with the same approved direct dependency set from TASK-FE-001 and no new dependency.
+
+Production-source review found no `fetch`, XMLHttpRequest, Axios, `eval`, dynamic Function, numeric parsing, reduction, or `Math` calculation. No mathematical parsing/evaluation, precedence, percentage, square-root, exponentiation, REST call, backend selection, keyboard handling, TASK-FE-003 responsive refinement, Java, Docker, or parity tooling was implemented. Generated `node_modules`, `dist`, and `coverage` remain ignored. `backend-go/` was not modified. TASK-FE-002 is Complete and TASK-FE-003 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
