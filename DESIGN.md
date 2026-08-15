@@ -53,7 +53,7 @@ fullstack-calculator-double-backend/
 ├── frontend/
 ├── backend-go/
 ├── backend-java/
-└── docker-compose.yml
+└── compose.yaml
 ```
 
 Only the architecture documents explicitly requested in this phase are created now. Application directories, manifests, `TASKS.md`, README, container files, and source files belong to later approved phases.

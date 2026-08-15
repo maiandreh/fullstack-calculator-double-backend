@@ -7637,6 +7637,10 @@ Production review found exactly one `fetch` call, confined to `src/api/calculato
 
 ## P019 — Frontend Quality Gate
 
+### Prompt ID
+
+P019
+
 ### Phase
 
 Verification — Frontend Quality Gate
@@ -8209,6 +8213,10 @@ Repository hygiene passed: `frontend/node_modules/`, `frontend/dist/`, and `fron
 
 ## P019-R1 — Frontend UX Human-Review Correction
 
+### Prompt ID
+
+P019-R1
+
 ### Phase
 
 Human Review Correction — Frontend UX
@@ -8622,6 +8630,10 @@ No product scope, expression grammar, calculation semantic, frontend evaluation,
 
 ## P020 — Java Backend Bootstrap
 
+### Prompt ID
+
+P020
+
 ### Phase
 
 Implementation — Java Backend Bootstrap
@@ -9017,6 +9029,10 @@ Created `backend-java/pom.xml`, `backend-java/mvnw`, `backend-java/mvnw.cmd`, `b
 The packaged application started successfully on the configured default port 8081. `curl -i http://localhost:8081/health` returned HTTP 200, `Content-Type: application/json`, and `{"status":"ok"}`; the application then completed a graceful shutdown. Root `.gitignore` already ignores `target/`, `.idea/`, and `*.iml`, so no ignore-file change was necessary and generated Maven/JaCoCo output is absent from Git status. TASK-JAVA-001 is Complete; TASK-JAVA-002 and all later tasks remain unchanged. No parser, arithmetic, calculator domain behavior, `/api/calculate`, calculator DTO, or calculator error mapping was implemented. No frontend or Go-backend file was modified, and no Docker or parity work was started. No approved artifact was changed or contradicted.
 
 ## P021 — Java Grammar and Core Arithmetic
+
+### Prompt ID
+
+P021
 
 ### Phase
 
@@ -9464,6 +9480,10 @@ Final `./mvnw test` passed 43 tests: 42 plain domain cases and the preserved hea
 
 ## P022 — Java Advanced Expression Semantics
 
+### Prompt ID
+
+P022
+
 ### Phase
 
 Implementation — Java Advanced Expression Semantics
@@ -9902,6 +9922,10 @@ Final `./mvnw test` passed 68 tests: 67 direct domain cases and the preserved he
 `TASK-JAVA-003` is Complete and `TASK-JAVA-004` remains Not Started. The Maven Wrapper build, port 8081 configuration, `/health`, core grammar/arithmetic behavior, and bootstrap test remain intact. The REST calculator API, request/response DTOs, HTTP mapping, comprehensive finite-result gate, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. No deviation or conflict with SPEC, DESIGN, ADR-002, ADR-003, or TASKS was found.
 
 ## P023 — Java Finite Result Enforcement
+
+### Prompt ID
+
+P023
 
 ### Phase
 
@@ -12301,3 +12325,201 @@ The first sandboxed Java run was environmentally blocked: Mockito/Byte Buddy cou
 `docker compose config` passed. Markdown section structure, `git diff --check`, parity script executability, and all explicitly linked local files/directories were checked. A first live parity invocation raced Java startup and reported it unavailable; rerunning with `docker compose up -d --wait` made all three services ready, after which the documented `python3 scripts/check-parity.py` invocation passed all 26 cases with 0 failures. `docker compose down` then removed this project's containers and network cleanly.
 
 One pre-existing artifact discrepancy was found and left unchanged as required: the illustrative repository tree in `DESIGN.md` §5 names `docker-compose.yml`, while the implemented, Compose-validated root file is `compose.yaml`. README documents the actual `compose.yaml`; this filename difference does not affect approved behavior or architecture. No other documentation/implementation discrepancy was found. Generated coverage/build outputs remain ignored by Git. TASK-DOC-001 is Complete; TASK-DOC-002 remains Not Started and is the next task.
+
+## P029 — Final Documentation and AI Disclosure Audit
+
+### Prompt ID
+
+P029
+
+### Phase
+
+Documentation — Final Documentation and AI Disclosure Audit
+
+### Objective
+
+Execute only `TASK-DOC-002` from `TASKS.md`.
+
+### Prompt
+
+```text
+Prompt ID: P029
+
+Phase: Documentation — Final Documentation and AI Disclosure Audit
+
+Objective:
+Execute only `TASK-DOC-002` from `TASKS.md`.
+
+Perform the final documentation/disclosure audit required for submission. Do not change application behavior.
+
+Before modifying anything:
+
+1. Read AGENTS.md.
+2. Read REQUIREMENTS.md.
+3. Read SCOPE.md.
+4. Read SPEC.md.
+5. Read DESIGN.md.
+6. Read TASKS.md.
+7. Read README.md.
+8. Read all accepted ADRs.
+9. Read docs/ai-prompts.md.
+10. Inspect the current repository structure and Git status.
+11. Record this exact prompt as P029 in docs/ai-prompts.md before making documentation changes.
+
+Execute only TASK-DOC-002.
+
+## 1. AI prompt disclosure audit
+
+Verify that docs/ai-prompts.md provides a transparent and useful record of the AI-assisted development process required by the assessment.
+
+Verify:
+
+- repository-changing implementation prompts are represented
+- relevant planning/specification prompts are represented where required
+- prompt IDs remain ordered and traceable
+- factual outcomes are present
+- blocked attempts remain factual
+- prior records have not been rewritten to create a cleaner history
+- the README links to the disclosure
+- the disclosure does not contain secrets, credentials, tokens, personal information, or irrelevant conversation material
+
+Do not rewrite historical prompts merely for style.
+
+Do not fabricate missing historical prompts.
+
+If a historical prompt cannot be reconstructed verbatim, do not invent it.
+
+## 2. Documentation consistency audit
+
+Cross-check:
+
+- README.md
+- REQUIREMENTS.md
+- SCOPE.md
+- SPEC.md
+- DESIGN.md
+- TASKS.md
+- docs/decisions/
+- docs/ai-prompts.md
+
+against repository reality.
+
+Fix only objective documentation inconsistencies.
+
+Known discrepancy to inspect:
+
+DESIGN.md may refer illustratively to:
+
+`docker-compose.yml`
+
+while the implemented and verified Compose file is:
+
+`compose.yaml`
+
+If confirmed, update DESIGN.md to reference the actual `compose.yaml`.
+
+Do not change architectural decisions or application behavior.
+
+## 3. README consistency
+
+Confirm README accurately documents:
+
+- Go as primary assessment backend
+- Java as additional implementation
+- React frontend
+- backend selection
+- required operations
+- optional operations
+- Docker
+- native execution
+- API examples
+- tests
+- coverage
+- parity verification
+- AI disclosure
+
+Do not expand README unnecessarily if these are already correct.
+
+## 4. Links and paths
+
+Verify all repository-relative links and referenced paths exist.
+
+Check especially:
+
+- REQUIREMENTS.md
+- SCOPE.md
+- SPEC.md
+- DESIGN.md
+- TASKS.md
+- docs/decisions/
+- docs/ai-prompts.md
+- scripts/check-parity.py
+- compose.yaml
+
+Correct broken documentation references only.
+
+## 5. Commands
+
+Confirm documented commands remain compatible with actual project configuration.
+
+Do not rerun the complete quality gate unless needed; P028/final pre-audit evidence may be reused for documentation consistency.
+
+Do not change application source to make documentation true.
+
+## 6. TASK tracking
+
+Mark only TASK-DOC-002 Complete if:
+
+- AI disclosure is adequate
+- documentation references are consistent
+- links/paths are valid
+- no known documentation discrepancy remains
+
+Do not mark TASK-FINAL-001 Complete.
+
+## 7. P029 Outcome
+
+Record a factual outcome containing:
+
+- TASK-DOC-002 result
+- files modified
+- AI disclosure audit result
+- documentation consistency result
+- links/path audit result
+- any correction made
+- confirmation that application source/behavior was unchanged
+- remaining task
+
+Do not rewrite prior prompt records.
+
+## 8. Required report
+
+Report:
+
+1. files modified
+2. AI disclosure audit result
+3. documentation consistency result
+4. broken links/paths found
+5. corrections made
+6. DESIGN.md compose filename result
+7. README status
+8. git diff --stat
+9. git status
+10. TASK-DOC-002 status
+11. remaining task
+
+Do not commit.
+Do not push.
+
+Stop for human review.
+```
+
+### Outcome
+
+Completed `TASK-DOC-002`. Modified `DESIGN.md` to replace the obsolete illustrative root filename `docker-compose.yml` with the implemented and verified `compose.yaml`; modified `TASKS.md` to mark only `TASK-DOC-002` Complete; and modified `docs/ai-prompts.md` to record P029, this outcome, and the missing explicit `Prompt ID` metadata for P019, P019-R1, and P020–P023. The historical prompt text and outcomes were not rewritten.
+
+The AI disclosure audit confirmed an ordered, traceable base sequence from P001 through P029, with the factual continuation records P007-R1, P007-R2, and P019-R1 preserved in place. Every entry now has explicit Prompt ID, Phase, Objective, Prompt, and Outcome sections. Repository governance, requirements, scope, specification, design, planning, implementation, verification, parity, Docker, and README work are represented. The two failed Go bootstrap attempts and later successful resumption remain visible and factual, as do other environment-limited verification attempts. No missing historical prompt was fabricated. A targeted scan found no private-key material, common cloud/API token forms, bearer credentials, or email addresses in the disclosure. README already links to `docs/ai-prompts.md` and required no change.
+
+Documentation was cross-checked against repository structure, manifests, frontend URL configuration, Compose topology, commands, accepted ADRs, and the authoritative requirements/scope/specification artifacts. All explicitly referenced repository paths and Markdown link targets exist. `docker compose config --services` resolved exactly `backend-go`, `backend-java`, and `frontend`; documented frontend npm scripts, Java Maven/JaCoCo configuration, Go module/version, ports, and Vite backend variables match their source files. No broken documentation link or path remained after the Compose filename correction. `git diff --check` passed.
+
+No application source, build manifest, runtime configuration, calculator behavior, REST contract, requirement, scope commitment, specification rule, or ADR was changed. `TASK-DOC-002` is Complete. The only remaining task is `TASK-FINAL-001`, which remains Not Started pending the final submission verification and human review.
