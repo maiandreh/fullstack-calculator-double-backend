@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/calculate")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 final class CalculatorController {
     static final String INVALID_REQUEST_MESSAGE =
             "A non-empty expression of at most 256 characters is required";

@@ -259,7 +259,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Minimal Dockerfiles for Go, Java, and frontend plus root Compose configuration; preserve separately selectable backend destinations. No Kubernetes, Helm, service discovery, gateway, or production orchestration; no reverse proxy unless a concrete browser/runtime need is documented and approved.
 - **Verification required:** Build all images; start the full Compose system; verify frontend availability, each backend, frontend evaluation through each choice, selection switching, and clean shutdown.
 - **Definition of Done:** One Compose startup yields an operable three-service calculator using both backend choices, with simple documented configuration.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 9. Documentation
 

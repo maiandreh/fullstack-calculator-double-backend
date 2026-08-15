@@ -96,9 +96,11 @@ func TestCalculateRejectsUnsupportedMediaType(t *testing.T) {
 }
 
 func TestCalculateAllowsDevelopmentOrigin(t *testing.T) {
-	response := performCalculateRequest(`{"expression":"2 + 2"}`, "application/json", allowedDevelopmentOrigin)
-	if origin := response.Header().Get("Access-Control-Allow-Origin"); origin != allowedDevelopmentOrigin {
-		t.Fatalf("Access-Control-Allow-Origin = %q, want %q", origin, allowedDevelopmentOrigin)
+	for _, allowedOrigin := range []string{"http://localhost:5173", "http://localhost:3000"} {
+		response := performCalculateRequest(`{"expression":"2 + 2"}`, "application/json", allowedOrigin)
+		if origin := response.Header().Get("Access-Control-Allow-Origin"); origin != allowedOrigin {
+			t.Fatalf("Access-Control-Allow-Origin = %q, want %q", origin, allowedOrigin)
+		}
 	}
 
 	disallowed := performCalculateRequest(`{"expression":"2 + 2"}`, "application/json", "https://example.com")
@@ -109,7 +111,7 @@ func TestCalculateAllowsDevelopmentOrigin(t *testing.T) {
 
 func TestCalculatePreflight(t *testing.T) {
 	request := httptest.NewRequest(http.MethodOptions, "/api/calculate", nil)
-	request.Header.Set("Origin", allowedDevelopmentOrigin)
+	request.Header.Set("Origin", "http://localhost:3000")
 	request.Header.Set("Access-Control-Request-Method", http.MethodPost)
 	request.Header.Set("Access-Control-Request-Headers", "Content-Type")
 	response := httptest.NewRecorder()
@@ -119,8 +121,8 @@ func TestCalculatePreflight(t *testing.T) {
 	if response.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusNoContent)
 	}
-	if origin := response.Header().Get("Access-Control-Allow-Origin"); origin != allowedDevelopmentOrigin {
-		t.Fatalf("Access-Control-Allow-Origin = %q, want %q", origin, allowedDevelopmentOrigin)
+	if origin := response.Header().Get("Access-Control-Allow-Origin"); origin != "http://localhost:3000" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want Docker frontend origin", origin)
 	}
 	if methods := response.Header().Get("Access-Control-Allow-Methods"); methods != http.MethodPost {
 		t.Fatalf("Access-Control-Allow-Methods = %q, want POST", methods)

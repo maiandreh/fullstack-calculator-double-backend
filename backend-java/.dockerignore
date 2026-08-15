@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+target
+*.class
+*.jar
+*.log
+hs_err_pid*
+replay_pid*
+*.swp
+*.swo
+*~

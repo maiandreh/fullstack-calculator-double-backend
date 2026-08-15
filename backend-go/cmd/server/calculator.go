@@ -11,7 +11,10 @@ import (
 	"github.com/maiandreh/fullstack-calculator-double-backend/backend-go/internal/expression"
 )
 
-const allowedDevelopmentOrigin = "http://localhost:5173"
+var allowedFrontendOrigins = map[string]struct{}{
+	"http://localhost:3000": {},
+	"http://localhost:5173": {},
+}
 
 type calculateRequest struct {
 	Expression *string `json:"expression"`
@@ -60,7 +63,7 @@ func calculate(response http.ResponseWriter, request *http.Request) {
 
 func calculatePreflight(response http.ResponseWriter, request *http.Request) {
 	setAllowedOrigin(response, request)
-	if request.Header.Get("Origin") == allowedDevelopmentOrigin {
+	if isAllowedFrontendOrigin(request.Header.Get("Origin")) {
 		response.Header().Set("Access-Control-Allow-Methods", http.MethodPost)
 		response.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	}
@@ -73,11 +76,17 @@ func jsonBodyComplete(decoder *json.Decoder) bool {
 }
 
 func setAllowedOrigin(response http.ResponseWriter, request *http.Request) {
-	if request.Header.Get("Origin") != allowedDevelopmentOrigin {
+	origin := request.Header.Get("Origin")
+	if !isAllowedFrontendOrigin(origin) {
 		return
 	}
-	response.Header().Set("Access-Control-Allow-Origin", allowedDevelopmentOrigin)
+	response.Header().Set("Access-Control-Allow-Origin", origin)
 	response.Header().Add("Vary", "Origin")
+}
+
+func isAllowedFrontendOrigin(origin string) bool {
+	_, allowed := allowedFrontendOrigins[origin]
+	return allowed
 }
 
 func mapDomainError(err error) (int, errorResponse, bool) {

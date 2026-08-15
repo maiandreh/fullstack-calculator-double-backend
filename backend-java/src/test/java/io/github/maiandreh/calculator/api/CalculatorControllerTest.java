@@ -96,13 +96,15 @@ class CalculatorControllerTest {
     }
 
     @Test
-    void permitsOnlyTheLocalViteDevelopmentOrigin() throws Exception {
-        mockMvc.perform(post("/api/calculate")
-                        .header("Origin", "http://localhost:5173")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"expression\":\"2 + 3\"}"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+    void permitsOnlyTheApprovedLocalFrontendOrigins() throws Exception {
+        for (String origin : new String[] {"http://localhost:5173", "http://localhost:3000"}) {
+            mockMvc.perform(post("/api/calculate")
+                            .header("Origin", origin)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"expression\":\"2 + 3\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Access-Control-Allow-Origin", origin));
+        }
 
         mockMvc.perform(post("/api/calculate")
                         .header("Origin", "https://example.com")
@@ -115,11 +117,11 @@ class CalculatorControllerTest {
     @Test
     void supportsVitePreflight() throws Exception {
         mockMvc.perform(options("/api/calculate")
-                        .header("Origin", "http://localhost:5173")
+                        .header("Origin", "http://localhost:3000")
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "Content-Type"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
                 .andExpect(header().string("Access-Control-Allow-Methods", "POST"))
                 .andExpect(header().string("Access-Control-Allow-Headers", "Content-Type"));
     }

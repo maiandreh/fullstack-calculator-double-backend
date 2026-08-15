@@ -1,0 +1,11 @@
+.git
+.idea
+.vscode
+coverage.out
+*.prof
+*.pprof
+*.test
+*.log
+*.swp
+*.swo
+*~

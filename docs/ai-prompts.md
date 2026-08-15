@@ -11145,3 +11145,590 @@ Preflight verification passed after sandbox runtime restrictions required the Go
 The live parity run reported `total=26 passed=26 failed=0` and exited zero. Port 8080 was already occupied by a reachable Go service, so it was used and left running rather than replaced or stopped. The packaged Java service was started on port 8081 for the approved integration run and stopped cleanly afterward. Manual curl sent the identical `sqrt(81) + 150 * 20%` request to both services: Go returned HTTP 200 `{"result":39}` and Java returned HTTP 200 `{"result":39.0}`; both are finite numeric results with exact semantic equality.
 
 `TASK-PAR-001` is Complete. No unresolved parity deviation or approved-artifact conflict remains. Remaining work begins with `TASK-DOCKER-001`.
+## P027 — Containerized Full Stack
+
+### Prompt ID
+
+P027
+
+### Phase
+
+Delivery — Containerized Full Stack
+
+### Objective
+
+Execute only `TASK-DOCKER-001` from `TASKS.md`: provide a minimal, production-conscious Docker setup capable of building and running the React frontend, Go backend, and Java backend together while preserving the already verified application behavior and cross-backend parity.
+
+### Prompt
+
+```text
+Prompt ID: P027
+
+Phase: Delivery — Containerized Full Stack
+
+Objective:
+Execute only `TASK-DOCKER-001` from `TASKS.md`: provide a minimal, production-conscious Docker setup capable of building and running the React frontend, Go backend, and Java backend together while preserving the already verified application behavior and cross-backend parity.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read all accepted ADRs relevant to deployment/runtime boundaries.
+8. Read `docs/ai-prompts.md`.
+9. Inspect the existing:
+   - frontend build configuration
+   - Go build/runtime structure
+   - Java Maven build/runtime structure
+   - backend URL configuration
+   - CORS configuration
+   - health endpoints
+10. Verify Docker availability:
+    - `docker --version`
+    - `docker compose version`
+11. Record this exact prompt as `P027` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-DOCKER-001`
+
+Do NOT:
+
+- change calculator semantics
+- change the REST contract
+- add calculator features
+- alter the verified parity dataset
+- refactor backend domain implementations
+- introduce Kubernetes
+- introduce cloud deployment configuration
+- introduce a reverse proxy unless it is concretely necessary for the approved frontend runtime design
+- alter approved requirements, specification, design, or ADRs merely to accommodate Docker
+
+If containerization reveals an actual architectural/configuration conflict, report it before changing approved behavior.
+
+## 1. Containerization goals
+
+The complete application must be runnable from the repository root with a command equivalent to:
+
+`docker compose up --build`
+
+The stack must contain exactly the application services required for this project:
+
+- frontend
+- backend-go
+- backend-java
+
+Do not add:
+
+- database
+- Redis
+- message broker
+- service discovery
+- API gateway
+- observability stack
+- infrastructure unrelated to the application
+
+## 2. Go Dockerfile
+
+Create a Dockerfile for `backend-go`.
+
+Use a multi-stage build.
+
+Build stage:
+
+- use an appropriate official Go image
+- download dependencies reproducibly
+- compile the application
+
+Runtime stage:
+
+- use a materially smaller runtime image
+- contain only what is necessary to execute the service
+- do not ship the Go compiler/toolchain
+
+Preserve:
+
+- port 8080
+- `/health`
+- `/api/calculate`
+
+Prefer running as a non-root user where practical.
+
+Do not alter Go calculator behavior.
+
+## 3. Java Dockerfile
+
+Create a Dockerfile for `backend-java`.
+
+Use a multi-stage build.
+
+Build stage:
+
+- use an appropriate Java 21 build environment
+- build through the repository's Maven Wrapper
+- package the application
+
+Runtime stage:
+
+- use an appropriate Java 21 JRE/runtime image
+- do not ship Maven or the complete build environment
+- run the packaged Spring Boot application
+
+Preserve:
+
+- port 8081
+- `/health`
+- `/api/calculate`
+
+Prefer running as a non-root user where practical.
+
+Do not skip tests merely to make the Docker build succeed unless the approved Docker strategy explicitly separates verified build/test stages. Prefer preserving test execution when reasonable.
+
+## 4. Frontend Dockerfile
+
+Create a multi-stage frontend Dockerfile.
+
+Build stage:
+
+- use an appropriate Node version compatible with the existing project
+- install dependencies reproducibly using the lockfile
+- build the Vite application
+
+Runtime stage:
+
+- serve only the built static assets
+- do not ship Node development tooling unnecessarily
+
+Use a small established static-file serving approach.
+
+Do not introduce a large application server.
+
+Do not convert the frontend into SSR.
+
+## 5. Browser networking constraint
+
+Remember:
+
+The frontend JavaScript runs in the user's browser.
+
+Docker Compose service names such as:
+
+`backend-go`
+`backend-java`
+
+are not automatically valid browser destinations.
+
+Do not incorrectly configure browser fetch requests to use internal Compose DNS names unless a deliberate proxy architecture makes them browser-accessible.
+
+Preserve a correct browser-visible routing strategy.
+
+For the default local Docker experience, the browser must be able to reach:
+
+Go backend:
+`http://localhost:8080`
+
+Java backend:
+`http://localhost:8081`
+
+Configure Vite build-time environment appropriately.
+
+Do not hardcode Docker-only URLs throughout React components.
+
+## 6. Frontend exposed port
+
+Expose the containerized frontend on a clear host port.
+
+Prefer:
+
+`3000`
+
+unless an existing approved artifact specifies another port.
+
+The intended Docker experience should therefore be conceptually:
+
+Frontend:
+`http://localhost:3000`
+
+Go:
+`http://localhost:8080`
+
+Java:
+`http://localhost:8081`
+
+Do not conflict with the Vite development workflow on port 5173.
+
+## 7. CORS
+
+Because the Docker frontend origin may be:
+
+`http://localhost:3000`
+
+verify both backends permit the approved local frontend origins required by:
+
+- Vite development
+- Dockerized frontend
+
+Do not use unrestricted `*` merely for convenience if explicit origins are practical.
+
+If CORS configuration must change, make the smallest explicit configuration change and add/update relevant tests.
+
+This is an infrastructure compatibility correction, not a calculator semantic change.
+
+## 8. Docker Compose
+
+Create a root Compose file using current Docker Compose syntax.
+
+Do not include an obsolete top-level `version` field unless required by the installed Compose implementation.
+
+Define:
+
+- frontend
+- backend-go
+- backend-java
+
+Configure:
+
+- builds
+- host port mappings
+- service names
+- environment/build arguments where required
+- healthchecks where practical
+
+Do not add unnecessary custom networks if the default Compose network is sufficient.
+
+Do not use `container_name` unless there is a demonstrated need.
+
+## 9. Health checks
+
+Use the existing backend `/health` endpoints for container health where practical.
+
+Do not install large tooling solely for health checks.
+
+If a minimal runtime image lacks curl/wget, choose a reasonable health-check strategy rather than bloating the image substantially.
+
+Do not add Spring Actuator.
+
+## 10. Build contexts
+
+Use narrow, deliberate build contexts.
+
+Create `.dockerignore` files where appropriate.
+
+Exclude at minimum relevant generated/local artifacts such as:
+
+- `.git`
+- `.idea`
+- `node_modules`
+- frontend `dist`
+- Java `target`
+- coverage output
+- editor metadata
+- temporary files
+
+Do not accidentally exclude required Maven Wrapper or Go module files.
+
+## 11. Reproducibility
+
+Use existing lock/module/build files:
+
+Frontend:
+- package lockfile with reproducible install (`npm ci`)
+
+Go:
+- `go.mod`
+- `go.sum` if present
+
+Java:
+- Maven Wrapper
+- `pom.xml`
+
+Do not generate alternative package managers or lockfiles.
+
+## 12. Secrets
+
+No secret should be baked into:
+
+- Dockerfiles
+- images
+- Compose
+- frontend build output
+
+Do not introduce fake credential infrastructure when the application requires no secrets.
+
+## 13. Image discipline
+
+Review the final images conceptually for:
+
+- multi-stage builds
+- minimal runtime contents
+- no compiler/build tools in runtime where avoidable
+- no source tree copied unnecessarily into runtime
+- explicit working directories
+- clear entrypoints/commands
+- non-root execution where practical
+
+Do not optimize image size at the expense of obscure or fragile configuration.
+
+## 14. Native workflow preservation
+
+Docker must be additive.
+
+Existing native workflows must continue to work:
+
+Go:
+`go run ./cmd/server`
+
+Java:
+`./mvnw spring-boot:run`
+
+Frontend:
+`npm run dev`
+
+Do not force Docker for development.
+
+## 15. Pre-container regression verification
+
+Before validating Compose, verify existing project quality gates remain green.
+
+Go:
+- `gofmt -l .`
+- `go test ./...`
+- `go build ./...`
+
+Java:
+- `./mvnw test`
+- `./mvnw package`
+
+Frontend:
+- `npm test -- --run`
+- `npm run build`
+- `npm run lint`
+
+Do not mask pre-existing failures as Docker problems.
+
+## 16. Docker build verification
+
+From repository root run:
+
+`docker compose build`
+
+All three images must build successfully.
+
+Report the result for:
+
+- frontend
+- backend-go
+- backend-java
+
+If supported and useful, report final image sizes, but do not treat size as an acceptance requirement.
+
+## 17. Full-stack startup
+
+Run:
+
+`docker compose up -d`
+
+Then inspect:
+
+`docker compose ps`
+
+All required services must be running.
+
+Backend health checks, if configured, should become healthy.
+
+## 18. Containerized smoke verification
+
+Verify:
+
+### Go health
+`GET http://localhost:8080/health`
+
+### Java health
+`GET http://localhost:8081/health`
+
+### Frontend
+`GET http://localhost:3000`
+
+must return the built frontend successfully.
+
+### Go calculation
+POST a representative expression to:
+`http://localhost:8080/api/calculate`
+
+### Java calculation
+POST the same expression to:
+`http://localhost:8081/api/calculate`
+
+Use:
+`sqrt(81) + 150 * 20%`
+
+Both must succeed semantically.
+
+## 19. Containerized parity
+
+Run the existing:
+
+`python3 scripts/check-parity.py`
+
+against the containerized backends.
+
+All previously passing parity cases must remain passing.
+
+Do not create a separate Docker parity dataset.
+
+The existing shared parity verifier remains the authority.
+
+## 20. Browser verification
+
+Open:
+
+`http://localhost:3000`
+
+Verify manually:
+
+- calculator renders correctly
+- Go can be selected
+- Go calculation succeeds
+- Java can be selected
+- Java calculation succeeds
+- switching backend preserves expression according to approved behavior
+- canonical backend errors display correctly
+- no CORS failure occurs
+- browser console has no material runtime/network error during normal use
+
+Do not claim browser verification if the agent cannot actually perform it.
+
+If browser interaction is unavailable, report it as requiring human verification.
+
+## 21. Shutdown verification
+
+Run:
+
+`docker compose down`
+
+Confirm the application containers stop cleanly.
+
+Do not remove unrelated Docker resources.
+
+Do not use destructive global cleanup commands such as:
+
+`docker system prune`
+
+## 22. Repository hygiene
+
+Run:
+
+`git status --short`
+
+Confirm no generated artifacts, image exports, build output, or local Docker state are accidentally tracked.
+
+Do not commit:
+
+- `target/`
+- `node_modules/`
+- `dist/`
+- coverage output
+- logs
+- temporary files
+
+## 23. Task tracking
+
+Update only:
+
+`TASK-DOCKER-001`
+
+Mark it Complete only if:
+
+- all three images build
+- Compose starts all services
+- backend health checks succeed
+- frontend is served
+- both APIs work from host
+- browser-visible backend URLs are correct
+- CORS supports the Docker frontend
+- existing parity suite passes against containers
+- native development workflow remains valid
+- Compose shuts down cleanly
+
+Do not modify final documentation task statuses.
+
+## 24. Prompt audit
+
+Update P027 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+- TASK-DOCKER-001 result
+- files created/modified
+- base/build/runtime image choices
+- multi-stage build approach
+- frontend browser URL strategy
+- CORS changes if any
+- Compose service/port structure
+- healthcheck approach
+- regression verification results
+- image build results
+- Compose startup result
+- smoke-test results
+- containerized parity result
+- browser verification status
+- shutdown result
+- repository hygiene
+- task status
+- confirmation that calculator semantics and REST contract were not changed
+
+Do not rewrite prior prompts/outcomes.
+
+## 25. Required final report
+
+Report:
+
+1. files created/modified
+2. Go image design
+3. Java image design
+4. frontend image design
+5. `.dockerignore` strategy
+6. Compose topology
+7. host port mapping
+8. frontend backend-URL strategy
+9. CORS configuration/result
+10. Go regression result
+11. Java regression result
+12. frontend regression result
+13. Docker build results
+14. Compose startup/health result
+15. Go container smoke result
+16. Java container smoke result
+17. frontend HTTP result
+18. containerized parity result
+19. browser verification status/result
+20. shutdown result
+21. repository hygiene result
+22. `git diff --stat`
+23. `git status`
+24. TASK-DOCKER-001 status
+25. remaining work beginning with the next task in TASKS.md
+26. any unresolved deviation/conflict
+
+Do not commit.
+Do not push.
+
+Stop after TASK-DOCKER-001 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-DOCKER-001`. Created `backend-go/Dockerfile`, `backend-go/.dockerignore`, `backend-java/Dockerfile`, `backend-java/.dockerignore`, `frontend/Dockerfile`, `frontend/.dockerignore`, and root `compose.yaml`. Modified only the infrastructure-compatible CORS allowlists and focused tests in `backend-go/cmd/server/calculator.go`, `backend-go/cmd/server/calculator_test.go`, `backend-java/src/main/java/io/github/maiandreh/calculator/api/CalculatorController.java`, and `backend-java/src/test/java/io/github/maiandreh/calculator/api/CalculatorControllerTest.java`; updated only TASK-DOCKER-001 in `TASKS.md` and recorded this prompt/outcome. No calculator domain implementation, calculator semantics, REST contract, parity dataset, approved requirement, specification, design, or ADR was changed.
+
+The Go multi-stage image uses `golang:1.26-alpine` to download modules and compile a stripped, static Linux binary, then copies only that binary into `alpine:3.23`; the runtime has no Go toolchain and runs as the non-root `calculator` user. The Java multi-stage image uses `eclipse-temurin:21-jdk-alpine`, the repository Maven Wrapper, a dependency-cache layer, and `./mvnw package` with tests enabled; it copies only the executable Spring Boot JAR into `eclipse-temurin:21-jre-alpine` and runs as non-root. The frontend uses `node:24-alpine`, `npm ci`, and the Vite build with explicit localhost backend build arguments; its `alpine:3.23` runtime contains only the static assets plus the small `busybox-extras` HTTP server and runs as non-root. Initial frontend startup exposed that base Alpine's BusyBox omitted the `httpd` applet; the image-only correction installed `busybox-extras` and invoked `/usr/sbin/httpd`, after which host HTTP verification passed.
+
+Each service has its own narrow build context and `.dockerignore`, excluding relevant generated output, dependencies, coverage, IDE/editor metadata, logs, and temporary files while retaining Go module files, the Maven Wrapper/POM, and the frontend lockfile. Compose defines exactly `frontend`, `backend-go`, and `backend-java`, uses the default network without `container_name` or an obsolete version field, and publishes frontend `3000:8080`, Go `8080:8080`, and Java `8081:8081`. Backend healthchecks use Alpine's small `wget` against the existing `/health` endpoints; no new application health feature or Spring Actuator was added.
+
+The frontend's browser-visible destinations remain build-time Vite configuration rather than Compose DNS names: the final compiled asset was inspected and contained exactly `http://localhost:8080` and `http://localhost:8081`. Both backends now explicitly allow only the approved local frontend origins `http://localhost:5173` and `http://localhost:3000`; focused tests cover both origins and Docker-origin preflight. Live Docker-origin POST and preflight checks returned the corresponding `Access-Control-Allow-Origin` and expected method/header values for both backends; unrestricted CORS was not introduced.
+
+Pre-container regression verification passed. Go `gofmt -l .` produced no paths, and `go test ./...` plus `go build ./...` passed after using `/tmp/p027-go-build-cache` because the sandbox made the default user cache read-only. Java `./mvnw test` and `./mvnw package` each passed with 89 tests, 0 failures, 0 errors, and 0 skipped. Frontend `npm test -- --run` passed 42 tests in 2 files, `npm run build` succeeded, and `npm run lint` succeeded. The sandbox emitted non-fatal stream-fd warnings during some native commands; verification commands themselves exited successfully.
+
+Final `docker compose build` built `frontend`, `backend-go`, and `backend-java` successfully; the Java container build itself also ran and passed all 89 tests. `docker compose up -d` started all three services. Final `docker compose ps` showed both backends healthy and the frontend running. Host smoke checks returned `{"status":"ok"}` from both backend health endpoints and HTTP 200 with `text/html` plus the built Calculator page from the frontend. The representative `sqrt(81) + 150 * 20%` request returned HTTP 200 `{"result":39}` from Go and HTTP 200 `{"result":39.0}` from Java. The unchanged `python3 scripts/check-parity.py` passed all 26 cases with 0 failures against the containerized backends.
+
+Interactive browser/console verification was not available to the agent and is explicitly left for human review; it is not claimed. Automated frontend tests, live host API/CORS checks, compiled URL inspection, and frontend HTTP smoke supplied the available non-interactive evidence for backend selection/runtime routing. `docker compose down` stopped and removed the three application containers and this project's default network cleanly; final `docker compose ps -a` was empty. Repository hygiene checks found no Docker state, image export, or newly unignored generated output in the working tree. `TASK-DOCKER-001` is Complete; remaining work begins with `TASK-DOC-001`. No unresolved approved-artifact conflict or implementation deviation remains.
