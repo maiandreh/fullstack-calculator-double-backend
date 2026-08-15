@@ -121,7 +121,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Create `frontend/` with React, TypeScript, Vite, Vitest, React Testing Library, `user-event` where useful, minimal app shell, environment-overridable Backend A/B configuration, and development/build/test scripts. Use native fetch later; no full calculator or evaluator.
 - **Verification required:** Install reproducibly, baseline test, TypeScript/build check, and dependency review excluding unapproved libraries.
 - **Definition of Done:** Minimal shell runs/builds/tests, configuration defaults to ports `8080`/`8081`, and no calculator engine or unrelated dependency exists.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-FE-002 — Implement display, expression state, and keypad
 

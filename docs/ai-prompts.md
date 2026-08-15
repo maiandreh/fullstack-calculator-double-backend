@@ -5956,3 +5956,341 @@ With `GOCACHE=/tmp/fullstack-calculator-go-cache`, `gofmt -w .` completed and `g
 Live port-8080 smoke verification returned HTTP 200 `{"status":"ok"}` for health; HTTP 200 result 14 for `2 + 3 * 4`; HTTP 200 result 39 for `sqrt(81) + 150 * 20%`; HTTP 200 result 512 for `2 ^ 3 ^ 2`; HTTP 200 results -4 and 4 for `-2 ^ 2` and `(-2) ^ 2`; and exact HTTP 400 canonical responses for `DIVISION_BY_ZERO`, `INVALID_EXPRESSION`, `INVALID_DOMAIN`, and `NON_FINITE_RESULT`. The server was stopped afterward.
 
 Architecture and separation review confirmed the expression package has no `net/http` dependency; handlers delegate calculation to the domain and map sentinel errors only at the transport boundary; responses expose only canonical messages; `/health` remains infrastructure-only; routing, JSON, CORS, and server behavior use the Go standard library; and there is no expression library, parser generator, speculative service/repository/interface layer, frontend calculation engine, or unrelated infrastructure. `coverage.out` is covered by the existing root `.gitignore` and did not appear in Git status; no binary or temporary test artifact was left visible. No new feature was introduced, and no frontend, Java, Docker, or parity implementation was started. TASK-GO-008 is Complete; later tasks remain unchanged. There is no unresolved deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-001, ADR-002, or TASKS.md.
+
+## P015
+
+### Prompt ID
+
+P015
+
+### Phase
+
+Implementation — Frontend Bootstrap
+
+### Objective
+
+Execute only `TASK-FE-001` from `TASKS.md`: initialize the frontend using the architecture already approved for the project, producing a minimal buildable and testable React application without implementing calculator behavior.
+
+### Prompt
+
+```text
+Prompt ID: P015
+
+Phase: Implementation — Frontend Bootstrap
+
+Objective:
+Execute only `TASK-FE-001` from `TASKS.md`: initialize the frontend using the architecture already approved for the project, producing a minimal buildable and testable React application without implementing calculator behavior.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-004 and any other ADR directly referenced by `TASK-FE-001`.
+8. Read `docs/ai-prompts.md`.
+9. Inspect the installed environment:
+   - `node --version`
+   - `npm --version`
+10. Record this exact prompt as `P015` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-FE-001 — Bootstrap frontend`
+
+Do NOT implement:
+
+- calculator keypad
+- calculator expression behavior
+- keyboard calculator interaction
+- mathematical evaluation
+- API calls
+- backend switching behavior
+- Java backend
+- Docker
+- parity tooling
+
+Do NOT modify:
+
+- REQUIREMENTS.md
+- SCOPE.md
+- SPEC.md
+- DESIGN.md
+- accepted ADRs
+
+If the installed Node/npm environment is incompatible with the selected stable frontend toolchain, stop and report the incompatibility rather than installing system software or silently changing architecture.
+
+# 1. Initialize frontend
+
+Create:
+
+`frontend/`
+
+Use:
+
+- React
+- TypeScript
+- Vite
+
+Select current stable dependency versions compatible with the installed Node.js version.
+
+Use npm as the package manager.
+
+Do not add application dependencies beyond those justified by the approved frontend architecture.
+
+# 2. Testing stack
+
+Configure the approved lightweight testing stack:
+
+- Vitest
+- React Testing Library
+- DOM testing environment required by Vitest
+- user-event if useful for upcoming interaction tests
+
+Do not introduce:
+
+- Jest
+- Cypress
+- Playwright
+- Redux
+- Zustand
+- Axios
+- React Router
+- UI frameworks
+- CSS frameworks
+- form libraries
+
+unless an approved artifact explicitly requires them.
+
+# 3. Minimal application
+
+Keep the application intentionally minimal.
+
+The application must render successfully, but do not build calculator functionality yet.
+
+A small application shell identifying the project is sufficient.
+
+Remove unnecessary Vite demonstration content such as:
+
+- counter examples
+- demo logos
+- instructional boilerplate
+
+Do not replace that boilerplate with speculative calculator components.
+
+# 4. Project structure
+
+Establish only directories/files that have an immediate responsibility.
+
+Do not pre-create the complete future component tree with empty files.
+
+At this stage, a small structure centered around:
+
+- application entry point
+- App component
+- test setup
+- minimal styling
+
+is sufficient.
+
+Future calculator components will be introduced by later tasks.
+
+# 5. Backend configuration
+
+Establish the minimal configuration mechanism approved by DESIGN for future backend URLs.
+
+Use Vite environment variables.
+
+Provide defaults appropriate for native local development:
+
+Go backend:
+`http://localhost:8080`
+
+Java backend:
+`http://localhost:8081`
+
+Do not implement backend selection yet.
+
+Do not make API requests yet.
+
+Do not scatter backend URLs through UI components.
+
+If an example environment file is appropriate, it must contain no secrets.
+
+# 6. TypeScript
+
+Use strict TypeScript configuration appropriate to the generated Vite project.
+
+Do not weaken type checking to make the bootstrap pass.
+
+Do not introduce `any` unnecessarily.
+
+# 7. Linting
+
+Use the lightweight lint configuration supplied/recommended by the selected Vite React TypeScript setup if present.
+
+Do not add overlapping formatting/linting systems.
+
+Do not add Prettier merely for tooling volume.
+
+# 8. Bootstrap tests
+
+Add only tests appropriate to behavior that exists in this increment.
+
+At minimum verify that the application shell renders.
+
+Do not create calculator tests before calculator behavior exists.
+
+The bootstrap test must test observable rendering, not implementation details.
+
+# 9. Scripts
+
+Ensure package scripts provide clear commands for:
+
+- development
+- build
+- test
+- coverage
+- lint if linting is configured
+
+Do not create repository-root orchestration scripts yet unless TASK-FE-001 explicitly requires them.
+
+# 10. Coverage configuration
+
+Configure Vitest coverage so the later frontend quality gate can generate a report.
+
+Do not impose an arbitrary percentage threshold.
+
+Generated coverage output must not be committed.
+
+Ensure repository ignore rules cover generated frontend artifacts such as:
+
+- node_modules
+- dist
+- coverage
+
+Modify the root `.gitignore` only if necessary.
+
+Do not create redundant nested ignore rules without a reason.
+
+# 11. Dependency review
+
+After initialization inspect:
+
+`npm ls --depth=0`
+
+Report direct dependencies and explain their purpose by category:
+
+- runtime
+- build
+- test
+- lint
+
+Identify any scaffold dependency that is unnecessary and remove it where doing so improves the assessment project without destabilizing the standard setup.
+
+Do not optimize dependencies merely for minimum count.
+
+# 12. Verification
+
+From `frontend/`, run:
+
+`npm test -- --run`
+
+`npm run build`
+
+`npm run lint`
+
+`npm run coverage`
+
+If script syntax differs because of the selected stable tool versions, use the correct equivalent and report it.
+
+All commands must succeed before TASK-FE-001 can be marked Complete.
+
+Inspect:
+
+`git status --short`
+
+Generated:
+
+- node_modules/
+- dist/
+- coverage/
+
+must not appear as files to commit.
+
+# 13. Existing Go preservation
+
+Do not modify `backend-go/`.
+
+The completed Go reference backend is outside this task.
+
+Do not run automated refactors across the repository.
+
+# 14. Task tracking
+
+Update only:
+
+`TASK-FE-001`
+
+Mark it Complete only if its complete Definition of Done in TASKS.md is satisfied.
+
+Do not change TASK-FE-002 or any later task.
+
+# 15. Prompt audit
+
+Update P015 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+- TASK-FE-001 result
+- Node version
+- npm version
+- React/Vite/TypeScript versions selected
+- files/directories created or modified
+- direct dependency summary
+- test result
+- build result
+- lint result
+- coverage command/result
+- task status
+- confirmation that no calculator behavior was implemented
+- confirmation that no API communication was implemented
+- confirmation that backend-go was not modified
+
+Do not rewrite previous prompts or outcomes.
+
+# 16. Required report
+
+After implementation report:
+
+1. Node and npm versions
+2. frontend dependency versions
+3. files/directories created
+4. resulting frontend structure
+5. direct dependency summary
+6. test result
+7. build result
+8. lint result
+9. coverage result
+10. repository-ignore verification
+11. `git diff --stat`
+12. `git status`
+13. TASK-FE-001 status
+14. remaining work beginning with TASK-FE-002
+15. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-FE-001 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-FE-001`. The installed environment is Node.js `v22.23.2` with npm `10.9.8`, which satisfies the selected stable toolchain engine ranges. Created `frontend/` as a minimal React 19.2.8, React DOM 19.2.8, TypeScript 6.0.3, and Vite 8.2.1 application. TypeScript 6.0.3 was selected as the newest stable TypeScript release compatible with the current `typescript-eslint` 8.67.0 peer range (`>=4.8.4 <6.1.0`), rather than incompatible TypeScript 7.0.2. Created `package.json` and `package-lock.json`; strict application and Node TypeScript configurations; Vite/Vitest configuration; the Vite HTML entry; the lightweight Vite-style ESLint flat configuration; `.env.example`; a centralized `src/config.ts` using `VITE_GO_BACKEND_URL` and `VITE_JAVA_BACKEND_URL` with native-development defaults `http://localhost:8080` and `http://localhost:8081`; the React entry point; a minimal `App` shell and stylesheet; Vite ambient declarations; Vitest setup; and one observable shell-rendering test. Modified only TASK-FE-001 in `TASKS.md` to Complete and recorded P015 and this outcome in `docs/ai-prompts.md`.
+
+Runtime dependencies are only `react` and `react-dom`. Build dependencies are TypeScript, Vite, `@vitejs/plugin-react`, and React/Node type declarations. Test dependencies are Vitest, `@vitest/coverage-v8`, jsdom, React Testing Library, jest-dom matchers, and user-event for the approved upcoming interaction-test stack. Lint dependencies are ESLint, `@eslint/js`, `typescript-eslint`, React Hooks/Refresh plugins, and browser globals. `npm install` added 250 packages, audited 251 packages, and reported zero vulnerabilities. `npm ls --depth=0` completed successfully with all direct dependencies resolved at their pinned versions.
+
+The first verification run passed tests, lint, and coverage but `npm run build` exposed two standard bootstrap configuration omissions: missing Vite ambient types for CSS/import-meta environment declarations and an explicit `.tsx` extension rejected by the strict application compiler settings. Added `src/vite-env.d.ts` with the standard `vite/client` reference and changed the application import to its extensionless form. No type checking was weakened. After correction, `npm test -- --run` passed one test in one test file; `npm run build` passed TypeScript project compilation and Vite production build; `npm run lint` passed; and `npm run coverage` passed with 100% of the single bootstrap statement and function covered. No coverage threshold was introduced. The existing root `.gitignore` already ignores `node_modules/`, `dist/`, and `coverage/`; all three generated directories were confirmed ignored and are absent from normal Git status, so `.gitignore` was not modified.
+
+The application renders only the project-identifying shell `Full-stack Calculator` and `Frontend foundation ready.` No keypad, expression behavior, keyboard calculator interaction, mathematical evaluation, API request, backend-switching behavior, Java backend, Docker, or parity tooling was implemented. `backend-go/` was not modified. TASK-FE-001 is Complete and TASK-FE-002 and all later tasks remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
