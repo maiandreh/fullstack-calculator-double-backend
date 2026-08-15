@@ -178,7 +178,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Create `backend-java/`, Java 21 Spring Boot Maven project, Maven Wrapper, Spring Web, Spring Boot Test, JaCoCo, minimal entry point, and port `8081`. No Lombok or parser behavior.
 - **Verification required:** Wrapper compile/test lifecycle and dependency review.
 - **Definition of Done:** Baseline project builds/tests through the wrapper with approved dependencies only and no domain functionality.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-JAVA-002 — Implement Java grammar and core arithmetic
 

@@ -8619,3 +8619,399 @@ Accessible names were corrected to `Multiply`, `Divide`, `Exponentiation`, `Squa
 Actual browser visual inspection was performed with the installed headless Chrome at 320px, 375px, 768px, and 1440px, using the unchanged Go backend to display `(2+3)*4 = 20`. Browser measurements confirmed the exact six visual rows, one zero spanning two columns, right-aligned expression/result hierarchy, visible backend selector, and no horizontal page overflow at every width. The calculator was 296px wide at 320px, 351px at 375px, and a centered capped 400px at 768px and 1440px; minimum button heights were 56px on mobile and 60px on larger viewports. Screenshots were visually inspected and showed conventional numeric order, distinct action/operator/number categories, a clear but secondary backend selector, comfortable controls, and balanced desktop presentation. A separate browser scenario preserved all 256 expression characters in the horizontally scrolling display, kept the keypad width fixed, and produced no page overflow. The temporary Vite and Chrome processes were stopped after inspection; temporary evidence remained under `/tmp`.
 
 No product scope, expression grammar, calculation semantic, frontend evaluation, API behavior, backend-selection behavior, or networking behavior changed. No dependency was added. No backend file was modified. The correction introduces no unresolved conflict with SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md. Final visual approval remains with the human reviewer.
+
+## P020 — Java Backend Bootstrap
+
+### Phase
+
+Implementation — Java Backend Bootstrap
+
+### Objective
+
+Execute only `TASK-JAVA-001` from `TASKS.md`: initialize the secondary Java backend as a minimal, buildable, testable Spring Boot service shell without implementing calculator behavior.
+
+### Prompt
+
+```text
+Prompt ID: P020
+
+Phase: Implementation — Java Backend Bootstrap
+
+Objective:
+Execute only `TASK-JAVA-001` from `TASKS.md`: initialize the secondary Java backend as a minimal, buildable, testable Spring Boot service shell without implementing calculator behavior.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-003 and any other ADR directly referenced by `TASK-JAVA-001`.
+8. Read `docs/ai-prompts.md`.
+9. Inspect the local Java environment:
+
+   * `java -version`
+   * `javac -version`
+   * `mvn -version` if Maven is available
+10. Record this exact prompt as `P020` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-001 — Bootstrap secondary Java backend`
+
+Do NOT implement:
+
+* expression parsing
+* arithmetic operations
+* calculator domain behavior
+* `/api/calculate`
+* calculator request/response DTOs
+* calculator error mapping
+* frontend changes
+* Docker
+* parity tooling
+
+Do NOT modify:
+
+* `REQUIREMENTS.md`
+* `SCOPE.md`
+* `SPEC.md`
+* `DESIGN.md`
+* accepted ADRs
+
+If Java 21 is unavailable or the environment cannot satisfy the approved architecture, stop and report the environment blocker instead of changing the approved Java version.
+
+## 1. Project location
+
+Create:
+
+`backend-java/`
+
+Use the approved technology stack:
+
+* Java 21
+* Spring Boot
+* Maven
+* Maven Wrapper
+* Spring Web
+* Spring Boot Test
+* JaCoCo
+* JUnit 5 through the approved Spring testing stack
+
+Do not add Lombok.
+
+Do not add dependencies unrelated to this bootstrap.
+
+## 2. Maven coordinates
+
+Use repository-appropriate Maven coordinates.
+
+Use:
+
+`groupId`:
+`io.github.maiandreh`
+
+Use an artifact/name clearly representing the Java calculator backend, for example:
+
+`calculator-java-backend`
+
+Use packages rooted under:
+
+`io.github.maiandreh.calculator`
+
+Do not use:
+
+`com.example`
+
+Do not use a company-owned namespace.
+
+## 3. Spring Boot version
+
+Select a current stable Spring Boot release compatible with Java 21 at implementation time.
+
+Do not modify DESIGN merely to record a patch version.
+
+The selected concrete version belongs in `pom.xml`.
+
+Report the selected version and compatibility rationale factually.
+
+## 4. Maven Wrapper
+
+Include the Maven Wrapper so the backend can be built and tested without requiring a globally installed Maven version.
+
+The intended project commands must use:
+
+`./mvnw`
+
+Do not depend on a developer-specific Maven installation.
+
+Ensure wrapper files that should be version controlled are not ignored.
+
+## 5. Application entry point
+
+Create the minimal Spring Boot application entry point.
+
+Do not create calculator controllers, services, parsers, or DTOs yet.
+
+The application must start successfully.
+
+## 6. Port configuration
+
+Configure Java backend default port:
+
+`8081`
+
+Keep configuration simple.
+
+Prefer standard Spring Boot application configuration.
+
+Do not add a custom configuration framework.
+
+## 7. Health endpoint
+
+A minimal infrastructure health endpoint is permitted for bootstrap verification.
+
+Implement:
+
+`GET /health`
+
+Expected:
+
+HTTP `200`
+
+and a small JSON response equivalent to:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Do not add Spring Boot Actuator merely for this endpoint.
+
+Do not add a new dependency for health checking.
+
+A minimal controller/handler is sufficient.
+
+This endpoint is infrastructure-only and is not calculator functionality.
+
+## 8. Project structure
+
+Keep the bootstrap intentionally small.
+
+A reasonable result may be conceptually similar to:
+
+```text
+backend-java/
+├── pom.xml
+├── mvnw
+├── mvnw.cmd
+├── .mvn/
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── io/github/maiandreh/calculator/
+    │   │       ├── CalculatorApplication.java
+    │   │       └── health/
+    │   │           └── HealthController.java
+    │   └── resources/
+    │       └── application.properties
+    └── test/
+        └── java/
+            └── ...
+```
+
+Do not create future domain/parser packages as placeholders.
+
+Do not introduce:
+
+* repositories
+* service interfaces
+* service implementations
+* factories
+* strategies
+* command patterns
+* dependency-injection abstractions beyond normal Spring constructor injection when needed
+* persistence
+* messaging
+* authentication
+
+## 9. Health endpoint test
+
+Add only bootstrap-level tests for behavior that exists now.
+
+At minimum verify:
+
+* `/health` returns HTTP 200
+* response JSON contains the expected status
+
+Use a focused Spring MVC/MockMvc test if appropriate.
+
+Do not create calculator tests.
+
+Do not create parser tests.
+
+Do not create acceptance tests for functionality that does not exist yet.
+
+## 10. JaCoCo
+
+Configure JaCoCo in Maven so coverage can be generated later.
+
+Do not add an arbitrary coverage threshold.
+
+Generated coverage artifacts must remain ignored by Git.
+
+Do not commit `target/`.
+
+## 11. Repository hygiene
+
+Verify the root `.gitignore` already excludes Maven-generated output:
+
+`target/`
+
+Also verify IntelliJ metadata remains ignored.
+
+Do not create or commit IDE project metadata.
+
+Modify `.gitignore` only if a concrete missing generated artifact requires it.
+
+## 12. Dependency review
+
+After initialization, inspect Maven dependencies using an appropriate Wrapper command such as:
+
+`./mvnw dependency:tree`
+
+Report direct/important dependencies by category:
+
+* Spring runtime
+* test
+* build/coverage
+
+Confirm:
+
+* no Lombok
+* no database driver
+* no persistence dependency
+* no expression library
+* no unnecessary production dependency
+
+## 13. Verification
+
+From `backend-java/`, run:
+
+`./mvnw test`
+
+`./mvnw package`
+
+Generate/confirm JaCoCo coverage using the configured Maven lifecycle or appropriate goal.
+
+Also confirm the application starts successfully.
+
+Then manually verify:
+
+```bash
+curl -i http://localhost:8081/health
+```
+
+Expected observable behavior:
+
+* HTTP 200
+* JSON health response
+
+Stop the application after verification.
+
+## 14. Existing project preservation
+
+Do not modify:
+
+* `backend-go/`
+* `frontend/`
+
+Do not run repository-wide automatic refactors.
+
+The completed Go reference backend and frontend are outside this task.
+
+## 15. Task tracking
+
+Update only:
+
+`TASK-JAVA-001`
+
+Mark it Complete only if its Definition of Done is fully satisfied:
+
+* Java 21 project created
+* Spring Boot/Maven bootstrap complete
+* Maven Wrapper works
+* port 8081 configured
+* health behavior works
+* tests pass
+* build/package passes
+* JaCoCo generation works
+* approved dependencies only
+* no calculator domain behavior exists
+
+Do not modify TASK-JAVA-002 or later task statuses.
+
+## 16. Prompt audit
+
+Update P020 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-JAVA-001 result
+* Java version
+* javac version
+* Spring Boot version selected
+* Maven Wrapper version where available
+* files created/modified
+* package namespace
+* dependency summary
+* test result
+* build/package result
+* JaCoCo result
+* health smoke-test result
+* task status
+* confirmation that no calculator/parser behavior was implemented
+* confirmation that no expression library or Lombok was introduced
+* confirmation that frontend and Go backend were not modified
+
+Do not rewrite previous prompts or outcomes.
+
+## 17. Required report
+
+After implementation report:
+
+1. Java version
+2. javac version
+3. Spring Boot version
+4. project coordinates
+5. resulting backend-java structure
+6. files created/modified
+7. dependency summary
+8. health test result
+9. Maven test result
+10. package/build result
+11. JaCoCo result
+12. manual `/health` result
+13. repository hygiene result
+14. `git diff --stat`
+15. `git status`
+16. TASK-JAVA-001 status
+17. remaining work beginning with TASK-JAVA-002
+18. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-JAVA-001 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-JAVA-001`. The available toolchain was Eclipse Temurin OpenJDK 21.0.12 LTS (`java` and `javac` 21.0.12), with global Maven 3.9.16. Created `backend-java/` as `io.github.maiandreh:calculator-java-backend:0.0.1-SNAPSHOT`, using packages rooted at `io.github.maiandreh.calculator`, Spring Boot 3.5.16, Java 21, Maven Wrapper 3.9.16 generated by Maven Wrapper Plugin 3.3.4 in `only-script` mode, Spring Web, Spring Boot Test with JUnit Jupiter 5.12.2, and JaCoCo 0.8.15. Spring Boot 3.5.16 was selected from the current stable 3.5 line because the initially inspected Spring Boot 4.1.0 starter resolves JUnit Jupiter 6, conflicting with this prompt's explicit JUnit 5 requirement; 3.5.16 supports Java 21 and satisfies both approved constraints.
+
+Created `backend-java/pom.xml`, `backend-java/mvnw`, `backend-java/mvnw.cmd`, `backend-java/.mvn/wrapper/maven-wrapper.properties`, `backend-java/src/main/java/io/github/maiandreh/calculator/CalculatorApplication.java`, `backend-java/src/main/java/io/github/maiandreh/calculator/health/HealthController.java`, `backend-java/src/main/resources/application.properties`, and `backend-java/src/test/java/io/github/maiandreh/calculator/health/HealthControllerTest.java`. Modified only `TASKS.md` to mark TASK-JAVA-001 Complete and `docs/ai-prompts.md` for the required P020 audit trail. The application defaults to port 8081 and exposes only the infrastructure endpoint `GET /health`, returning HTTP 200 and `{"status":"ok"}`. The focused Spring Boot HTTP test verifies the status, JSON content type, and exact body.
+
+`./mvnw test` passed with 1 test, 0 failures, 0 errors, and 0 skipped. `./mvnw package` passed and produced the executable Spring Boot jar under ignored `target/`. `./mvnw verify` passed and JaCoCo generated `target/site/jacoco/` after analyzing 2 production classes; coverage recorded 10/15 instructions, 3/5 lines, and 3/4 methods, with no threshold introduced. `./mvnw dependency:tree` passed. The only direct dependencies are `spring-boot-starter-web` at compile scope and `spring-boot-starter-test` at test scope; JaCoCo and Spring Boot Maven plugins are build tooling. No Lombok, database driver, persistence starter, or calculator expression dependency was introduced. Spring Framework's transitive `spring-expression` module is part of the required Spring Web framework and is not used as a calculator evaluator.
+
+The packaged application started successfully on the configured default port 8081. `curl -i http://localhost:8081/health` returned HTTP 200, `Content-Type: application/json`, and `{"status":"ok"}`; the application then completed a graceful shutdown. Root `.gitignore` already ignores `target/`, `.idea/`, and `*.iml`, so no ignore-file change was necessary and generated Maven/JaCoCo output is absent from Git status. TASK-JAVA-001 is Complete; TASK-JAVA-002 and all later tasks remain unchanged. No parser, arithmetic, calculator domain behavior, `/api/calculate`, calculator DTO, or calculator error mapping was implemented. No frontend or Go-backend file was modified, and no Docker or parity work was started. No approved artifact was changed or contradicted.
