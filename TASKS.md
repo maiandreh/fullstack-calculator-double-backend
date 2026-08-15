@@ -272,7 +272,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Overview, concise architecture, prerequisites, native setup/run for Go/Java/frontend, Compose startup, API contract/examples, test/coverage commands, design and dual-backend rationale, Go primary alignment, trade-offs, known boundaries, and links to SPEC/ADRs/prompt disclosure.
 - **Verification required:** Follow commands from a clean-setup perspective, exercise API examples, check links and provenance language, and ensure generated outputs remain ignored.
 - **Definition of Done:** README includes every listed deliverable accurately and links rather than copying full specification/ADR content.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-DOC-002 — Finalize AI prompt disclosure
 

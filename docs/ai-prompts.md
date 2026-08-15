@@ -11732,3 +11732,572 @@ Pre-container regression verification passed. Go `gofmt -l .` produced no paths,
 Final `docker compose build` built `frontend`, `backend-go`, and `backend-java` successfully; the Java container build itself also ran and passed all 89 tests. `docker compose up -d` started all three services. Final `docker compose ps` showed both backends healthy and the frontend running. Host smoke checks returned `{"status":"ok"}` from both backend health endpoints and HTTP 200 with `text/html` plus the built Calculator page from the frontend. The representative `sqrt(81) + 150 * 20%` request returned HTTP 200 `{"result":39}` from Go and HTTP 200 `{"result":39.0}` from Java. The unchanged `python3 scripts/check-parity.py` passed all 26 cases with 0 failures against the containerized backends.
 
 Interactive browser/console verification was not available to the agent and is explicitly left for human review; it is not claimed. Automated frontend tests, live host API/CORS checks, compiled URL inspection, and frontend HTTP smoke supplied the available non-interactive evidence for backend selection/runtime routing. `docker compose down` stopped and removed the three application containers and this project's default network cleanly; final `docker compose ps -a` was empty. Repository hygiene checks found no Docker state, image export, or newly unignored generated output in the working tree. `TASK-DOCKER-001` is Complete; remaining work begins with `TASK-DOC-001`. No unresolved approved-artifact conflict or implementation deviation remains.
+## P028 — Technical Assessment Delivery README
+
+### Prompt ID
+
+P028
+
+### Phase
+
+Documentation — Technical Assessment Delivery README
+
+### Objective
+
+Execute only the README/documentation task currently defined in TASKS.md.
+
+Create a reviewer-oriented README.md that accurately documents the repository as it exists now and demonstrates coverage of the technical-assessment requirements without changing application behavior.
+
+### Prompt
+
+```text
+Prompt ID: P028
+
+Phase: Documentation — Technical Assessment Delivery README
+
+Objective:
+Execute only the README/documentation task currently defined in TASKS.md.
+
+Create a reviewer-oriented README.md that accurately documents the repository as it exists now and demonstrates coverage of the technical-assessment requirements without changing application behavior.
+
+Before modifying anything:
+
+1. Read AGENTS.md.
+2. Read REQUIREMENTS.md.
+3. Read SCOPE.md.
+4. Read SPEC.md.
+5. Read DESIGN.md.
+6. Read TASKS.md.
+7. Read all accepted ADRs under docs/decisions/.
+8. Read docs/ai-prompts.md.
+9. Inspect the actual implementation and configuration of:
+   - frontend/
+   - backend-go/
+   - backend-java/
+   - scripts/check-parity.py
+   - compose.yaml
+   - all Dockerfiles
+   - package.json
+   - go.mod
+   - pom.xml
+   - Maven Wrapper
+   - relevant .gitignore/.dockerignore files
+10. Inspect the original assessment requirements recorded in the repository.
+11. Record this exact prompt as P028 in docs/ai-prompts.md before modifying README.md.
+
+Do not rely on assumptions from previous prompts when repository contents can be inspected directly.
+
+Do not change application source code.
+
+Do not change SPEC.md, DESIGN.md, REQUIREMENTS.md, SCOPE.md, or accepted ADRs.
+
+If documentation and implementation disagree, report the discrepancy instead of silently modifying the implementation.
+
+## README objective
+
+README.md is the primary entry point for the technical reviewer.
+
+It must answer quickly:
+
+- What was requested?
+- What was implemented?
+- How is the application architected?
+- How do I run it?
+- How do I test it?
+- How do I generate coverage?
+- How do I verify both backends?
+- Which optional requirements were implemented?
+- How was AI used?
+- Where are the detailed engineering decisions?
+
+Keep it professional, concise, technically precise, and optimized for assessment review.
+
+## Required README structure
+
+### 1. Title and overview
+
+Use:
+
+# Fullstack Calculator — Double Backend
+
+Explain concisely:
+
+- React + TypeScript frontend
+- Go REST backend as the primary assessment implementation
+- Java/Spring Boot as an additional independent backend
+- user can switch between Go and Java from the UI
+- both implement the same calculator API contract
+
+Do not imply Java was required by the assessment if it was not.
+
+### 2. Assessment Coverage
+
+Add an early compact table.
+
+Derive the exact requirements from REQUIREMENTS.md / assessment material.
+
+Distinguish:
+
+- required
+- optional
+- additional engineering extension
+
+Show implementation status.
+
+At minimum cover, where actually supported:
+
+- React frontend
+- responsive/intuitive calculator UI
+- addition
+- subtraction
+- multiplication
+- division
+- exponentiation
+- square root
+- percentage
+- REST API
+- validation
+- division-by-zero handling
+- JSON responses
+- tests
+- coverage reports
+- Go backend
+- Docker
+- AI prompt disclosure
+
+Java double-backend support must be identified as an additional extension, not an assessment requirement.
+
+Do not claim a requirement is complete unless repository evidence supports it.
+
+### 3. Architecture
+
+Add a concise Mermaid diagram showing:
+
+Browser
+  |
+React frontend
+  |
+backend selector
+ / \
+Go  Java
+8080 8081
+ \ /
+same POST /api/calculate contract
+
+Explain:
+
+- frontend is presentation only
+- mathematical evaluation occurs on the selected backend
+- Go and Java are independent implementations
+- both conform to SPEC.md
+- HTTP parity is verified externally
+
+Link to DESIGN.md and docs/decisions/.
+
+### 4. Calculator capabilities
+
+Document actual supported syntax:
+
+- +
+- -
+- *
+- /
+- ^
+- %
+- sqrt(...)
+- parentheses
+- unary signs where supported
+
+Give representative examples, including:
+
+2 + 3 * 4 -> 14
+(2 + 3) * 4 -> 20
+2 ^ 3 ^ 2 -> 512
+150 * 20% -> 30
+sqrt(81) -> 9
+
+Explain percentage semantics accurately.
+
+Do not call this an unrestricted scientific-expression engine.
+
+Refer to SPEC.md for formal behavior.
+
+### 5. Technology stack
+
+Use a compact table derived from manifests.
+
+Document the actual stack, such as:
+
+Frontend:
+- React
+- TypeScript
+- Vite
+- Vitest / Testing Library where actually present
+
+Go:
+- Go
+- standard library HTTP stack
+- custom expression parser
+
+Java:
+- Java 21
+- Spring Boot
+- Maven Wrapper
+- JUnit 5
+- MockMvc
+- JaCoCo
+
+Delivery:
+- Docker
+- Docker Compose
+
+Parity:
+- Python 3 standard library
+
+Do not invent versions. Read them from project files where useful.
+
+### 6. Quick Start — Docker
+
+Make this the preferred reviewer path.
+
+Document from repository root:
+
+docker compose up --build
+
+Then document the verified URLs:
+
+Frontend:
+http://localhost:3000
+
+Go:
+http://localhost:8080
+
+Java:
+http://localhost:8081
+
+Document:
+
+docker compose down
+
+Mention that the frontend exposes a backend selector for Go/Java.
+
+### 7. Native development
+
+Document exact verified commands.
+
+Go:
+- directory
+- run command
+- port
+
+Java:
+- directory
+- ./mvnw spring-boot:run
+- port
+
+Frontend:
+- directory
+- reproducible install command
+- development command
+- development port
+
+Inspect actual frontend environment configuration and document how backend URLs are selected/configured.
+
+Do not invent environment variable names.
+
+### 8. API
+
+Document:
+
+POST /api/calculate
+
+Example:
+
+{
+  "expression": "(2 + 3) * 4"
+}
+
+Success:
+
+{
+  "result": 20
+}
+
+Provide a copy-paste curl example for Go.
+
+Explain that port 8081 targets the equivalent Java API.
+
+Document canonical application errors:
+
+- INVALID_REQUEST
+- INVALID_EXPRESSION
+- DIVISION_BY_ZERO
+- INVALID_DOMAIN
+- NON_FINITE_RESULT
+
+Provide one representative error response.
+
+### 9. Testing
+
+Provide copy-paste commands derived from actual configuration.
+
+Go:
+- tests
+- vet
+- build
+
+Java:
+- tests
+- package/build
+
+Frontend:
+- tests
+- build
+- lint
+
+Do not invent npm script names; inspect package.json.
+
+### 10. Coverage
+
+The assessment explicitly asks for test coverage evidence.
+
+Document how to generate coverage for all applicable components.
+
+Go:
+document the actual coverage command and output artifact.
+
+Java:
+document the JaCoCo command/configuration and report location.
+
+Frontend:
+document the actual coverage script/command and report location.
+
+Generated reports should remain ignored by Git.
+
+Do not invent coverage percentages.
+
+Only include numeric coverage figures if regenerated during this task.
+
+### 11. Cross-Backend Parity
+
+Explain that scripts/check-parity.py sends the same contract dataset to both live services.
+
+Document:
+
+python3 scripts/check-parity.py
+
+Report the already verified result only if still supported by repository evidence:
+
+26 cases
+26 passed
+0 failed
+
+Explain:
+
+- same HTTP requests
+- status comparison
+- canonical error comparison
+- numeric comparison
+- absolute tolerance <= 1e-12
+
+Clarify that parity testing complements rather than replaces unit/API tests.
+
+### 12. Docker
+
+Briefly explain:
+
+- three application containers
+- multi-stage builds
+- frontend static build/runtime
+- Go minimal runtime
+- Java JRE runtime
+- Compose orchestration
+- explicit CORS support for local native and containerized frontend origins
+
+Do not turn README into a Docker tutorial.
+
+### 13. Key Design Decisions
+
+Summarize only the most relevant reviewer-facing decisions:
+
+- Go selected as primary assessment backend
+- Java added as independent contract-compatible implementation
+- specification shared, implementation not shared
+- bounded custom parser rather than third-party expression engine
+- backend-authoritative evaluation
+- minimal Go HTTP stack
+- thin React transport/presentation layer
+- parity verification through public HTTP contract
+- Docker remains additive to native development
+
+Link to ADRs for details.
+
+### 14. Project Structure
+
+Provide a compact repository tree including:
+
+frontend/
+backend-go/
+backend-java/
+scripts/
+docs/
+compose.yaml
+REQUIREMENTS.md
+SCOPE.md
+SPEC.md
+DESIGN.md
+TASKS.md
+
+Do not include generated directories.
+
+### 15. Spec-Driven Development
+
+Briefly explain the workflow:
+
+Requirements
+→ Scope
+→ Specification / acceptance criteria
+→ Design / ADRs
+→ Tasks
+→ Implementation
+→ Verification
+
+Link to the relevant root documents.
+
+Keep this concise.
+
+### 16. AI-Assisted Development
+
+Be transparent.
+
+State that AI-assisted development was used during the assessment.
+
+Explain that:
+
+- requirements/specification constrained implementation prompts
+- implementation was divided into bounded tasks
+- prompts and factual outcomes were recorded
+- changes were reviewed before commits
+
+Link to:
+
+docs/ai-prompts.md
+
+Do not paste the prompt history into README.
+
+### 17. Scope boundaries / trade-offs
+
+Briefly identify deliberate exclusions where supported by SCOPE.md, such as:
+
+- no persistence/database
+- no authentication
+- no calculation history
+- no arbitrary mathematical functions
+- no complex-number support
+
+Explain that the Java backend is intentionally additional scope demonstrating contract interoperability.
+
+## Validation
+
+Before completing the task, validate every documented command against repository reality.
+
+Run or inspect enough to verify:
+
+Go:
+- test command
+- vet command
+- build command
+
+Java:
+- test command
+- package command
+- JaCoCo availability
+
+Frontend:
+- test script
+- build script
+- lint script
+- coverage script
+
+Docker:
+- docker compose config
+
+Parity:
+- script existence and invocation
+
+Check Markdown structure and links.
+
+Do not modify application source merely to make a README statement true.
+
+## Task tracking
+
+Update only the README/documentation task corresponding to TASK-DOC-001.
+
+Mark it Complete only if the README satisfies the assessment delivery requirements.
+
+Do not mark later documentation/final-delivery tasks complete.
+
+## P028 Outcome
+
+Update docs/ai-prompts.md with factual evidence:
+
+- files changed
+- README sections created
+- assessment coverage documented
+- run instructions documented
+- testing documented
+- coverage documented
+- API documented
+- parity documented
+- Docker documented
+- SDD documentation linked
+- AI usage disclosed
+- validation actually performed
+- discrepancies, if any
+- TASK-DOC-001 status
+
+Do not rewrite earlier prompt records.
+
+## Required final report
+
+Report:
+
+1. files changed
+2. README outline
+3. assessment coverage summary
+4. Docker quick-start
+5. native run commands
+6. API documentation status
+7. testing documentation status
+8. coverage documentation status
+9. parity documentation status
+10. Docker documentation status
+11. design/ADR references
+12. SDD references
+13. AI disclosure
+14. validation commands/results
+15. discrepancies found
+16. git diff --stat
+17. git status
+18. TASK-DOC-001 status
+19. next remaining task
+
+Do not commit.
+Do not push.
+
+Stop for human review.
+```
+
+### Outcome
+
+Completed `TASK-DOC-001`. Created root `README.md`; modified only `TASKS.md` to mark TASK-DOC-001 Complete and this P028 audit outcome. No application source, requirements, scope, specification, design, or ADR was changed.
+
+The reviewer-oriented README contains the requested title/overview, an early assessment-coverage table distinguishing required capabilities, optional assessment capabilities, preferences, and additional Java/parity scope, plus architecture, calculator grammar/examples, manifest-derived technology stack, preferred Docker quick start, native workflows, Vite backend URL configuration, REST request/success/error contracts, testing, all three coverage workflows, cross-backend parity, concise Docker design, key decisions with ADR links, project structure, spec-driven development links, AI-use disclosure, and deliberate scope boundaries. It identifies Go as the primary assessment-aligned backend and Java as an additional independent compatibility implementation rather than an assessment requirement.
+
+README commands and claims were validated against repository contents. Go `go test ./...`, `go vet ./...`, `go build ./...`, coverage generation to `coverage.out`, and HTML generation to `coverage/index.html` passed using `/tmp/p028-go-build-cache` because the sandbox's default Go cache is read-only. Regenerated Go package statement coverage was 81.2% for `cmd/server` and 98.3% for `internal/expression`; percentages were not added to README. Frontend `npm test -- --run`, `npm run build`, `npm run lint`, and `npm run coverage` passed: 42 tests in 2 files, 0 failures, with regenerated 97.75% statement, 92.15% branch, 100% function, and 97.7% line coverage; `frontend/coverage/index.html` exists, and percentages were not added to README.
+
+The first sandboxed Java run was environmentally blocked: Mockito/Byte Buddy could not self-attach and the random-port health test could not open a loopback socket. The same documented commands were rerun with the required runtime permission and passed: `./mvnw test`, `./mvnw package`, and `./mvnw verify` each completed with 89 tests, 0 failures, 0 errors, and 0 skipped; JaCoCo analyzed 11 classes and generated `backend-java/target/site/jacoco/index.html`. This was a sandbox restriction, not an implementation or documentation defect.
+
+`docker compose config` passed. Markdown section structure, `git diff --check`, parity script executability, and all explicitly linked local files/directories were checked. A first live parity invocation raced Java startup and reported it unavailable; rerunning with `docker compose up -d --wait` made all three services ready, after which the documented `python3 scripts/check-parity.py` invocation passed all 26 cases with 0 failures. `docker compose down` then removed this project's containers and network cleanly.
+
+One pre-existing artifact discrepancy was found and left unchanged as required: the illustrative repository tree in `DESIGN.md` §5 names `docker-compose.yml`, while the implemented, Compose-validated root file is `compose.yaml`. README documents the actual `compose.yaml`; this filename difference does not affect approved behavior or architecture. No other documentation/implementation discrepancy was found. Generated coverage/build outputs remain ignored by Git. TASK-DOC-001 is Complete; TASK-DOC-002 remains Not Started and is the next task.
