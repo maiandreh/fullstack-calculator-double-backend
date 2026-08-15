@@ -7161,3 +7161,476 @@ The CSS now applies universal border-box sizing, fluid mobile-first page padding
 `npm test -- --run` passed one test file with 13 tests and zero failures. New tests cover all supported character keys; Escape, Backspace, and Enter; unsupported `a` and `@`; ignored modified shortcuts; keyboard/keypad canonical equivalence; Escape/Clear and keyboard/control Backspace equivalence; Enter/equals evaluation-boundary equivalence; prevention of duplicate activation with a focused control; and preservation of a 256-character expression. `npm run build` passed strict TypeScript compilation and Vite production build. `npm run lint` passed. `npm run coverage` passed with 100% statements (43/43), branches (13/13), functions (15/15), and lines (41/41), with no threshold added. `npm ls --depth=0` passed with the unchanged approved direct dependencies and no new package.
 
 Semantic buttons, native focusability, visible focus outlines, and accessible display labels remain intact; keyboard support supplements rather than replaces controls. Production-source review found no fetch/XMLHttpRequest/Axios, `eval`, dynamic Function, math operation, numeric parsing, reduction, parser, or frontend evaluator. No REST communication, backend selection communication, mathematical evaluation, Java, Docker, or parity tooling was implemented. Generated outputs remain ignored and the temporary screenshots were written only under `/tmp`. `backend-go/` was not modified. TASK-FE-003 is Complete and TASK-FE-004 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
+
+## P018
+
+### Prompt ID
+
+P018
+
+### Phase
+
+Implementation — Frontend API Integration
+
+### Objective
+
+Execute only `TASK-FE-004` from `TASKS.md`: connect the calculator UI to the selected backend using the approved REST contract, while preserving the backend as the authoritative calculation engine.
+
+### Prompt
+
+```text
+Prompt ID: P018
+
+Phase: Implementation — Frontend API Integration
+
+Objective:
+Execute only `TASK-FE-004` from `TASKS.md`: connect the calculator UI to the selected backend using the approved REST contract, while preserving the backend as the authoritative calculation engine.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-004 and any other ADR directly referenced by `TASK-FE-004`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P018` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-FE-004 — Integrate selected backend API`
+
+Do NOT implement:
+
+* Java backend
+* Docker
+* cross-backend parity tooling
+* mathematical evaluation in frontend
+* parser/evaluator logic in frontend
+* new calculator operations
+* unrelated visual redesign
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the existing UI structure conflicts with the approved API contract, stop and report the conflict before changing behavior.
+
+## 1. Backend selection
+
+Implement the two approved backend choices.
+
+Use neutral UI/configuration concepts consistent with the current architecture, but the visible labels may reflect the approved implementation plan:
+
+* Go
+* Java
+
+Default local endpoints:
+
+Go:
+`http://localhost:8080`
+
+Java:
+`http://localhost:8081`
+
+Read them from Vite environment configuration with these values as local-development defaults.
+
+Do not hardcode URLs throughout UI components.
+
+Keep backend configuration isolated.
+
+## 2. API client
+
+Create or complete a small API module responsible for calculator HTTP communication.
+
+Use native browser `fetch`.
+
+Do not add Axios or another HTTP client dependency.
+
+The API module must receive:
+
+* selected backend
+* canonical expression
+
+and call:
+
+`POST /api/calculate`
+
+with:
+
+```json
+{
+  "expression": "(2 + 3) * 4"
+}
+```
+
+and:
+
+`Content-Type: application/json`
+
+## 3. Success handling
+
+For HTTP 200, read the approved response:
+
+```json
+{
+  "result": 20
+}
+```
+
+Validate at runtime that:
+
+* response JSON is an object
+* `result` exists
+* `result` is a finite JavaScript number
+
+Do not blindly trust a TypeScript type assertion.
+
+If a nominally successful response has an invalid shape, surface a generic safe backend-response error.
+
+Do not add a schema-validation library for this.
+
+## 4. Calculator error handling
+
+For application-defined error responses, read:
+
+```json
+{
+  "code": "ERROR_CODE",
+  "message": "Human-readable message"
+}
+```
+
+When a valid application error body is available, display the backend-provided canonical message.
+
+Do not reimplement domain-specific error rules in the frontend.
+
+Do not inspect expression syntax locally to determine backend error codes.
+
+## 5. Connectivity failures
+
+If the selected backend cannot be reached, show a clear user-facing connectivity error.
+
+The message should identify the selected backend sufficiently for the user to understand what failed.
+
+Do not expose low-level browser/network diagnostics.
+
+The Java backend is not implemented yet, so selecting Java and evaluating must fail cleanly as a connectivity error.
+
+Do not disable Java selection merely because it is not running.
+
+## 6. Backend selector UI
+
+Expose a clear backend selector in the calculator interface.
+
+Prefer a small segmented/radio-style control.
+
+Requirements:
+
+* Go and Java choices are visible
+* one backend is selected at a time
+* changing backend does not evaluate the current expression
+* changing backend does not clear the expression
+* the selected backend is the only backend contacted on evaluation
+
+Keep it visually secondary to the calculator itself.
+
+## 7. Evaluate behavior
+
+Connect:
+
+* equals button
+* Enter key
+
+to the same API-backed evaluation path.
+
+If the expression is empty or whitespace-only:
+
+* do not make a network request
+* preserve the behavior defined in `SPEC.md`
+
+When evaluation starts:
+
+* prevent duplicate submissions
+* expose minimal loading state
+* clear stale error state appropriately
+
+On success:
+
+* display the returned result
+* clear stale error state
+
+On failure:
+
+* display the error
+* remove any stale previous successful result
+
+Do not calculate locally.
+
+## 8. Stale result behavior
+
+If a previous calculation succeeded and the next one fails, the old result must not remain presented as the current answer.
+
+When the user changes the expression after a result:
+
+follow the behavior already approved in SPEC/UI state; do not invent a new result-history model.
+
+Do not introduce persistent calculation history.
+
+## 9. Duplicate submission prevention
+
+While a request is in progress:
+
+* equals must not trigger a second request
+* Enter must not trigger a second request
+* provide minimal loading/disabled feedback
+
+Do not introduce queues, cancellation frameworks, or request-management libraries.
+
+## 10. Canonical expression transport
+
+The UI may display friendly symbols, but the request must use canonical expression syntax.
+
+Examples:
+
+display:
+`2 × 3`
+
+transport:
+`2 * 3`
+
+display:
+`√(81)`
+
+transport:
+`sqrt(81)`
+
+Do not send Unicode-only calculator symbols to the backend.
+
+Reuse the expression-state/canonical-token design already implemented where possible.
+
+## 11. Frontend architecture
+
+Keep HTTP concerns outside presentation components as approved in DESIGN.
+
+A small structure conceptually equivalent to:
+
+* calculator state/UI
+* backend config
+* calculator API module
+
+is sufficient.
+
+Do not introduce:
+
+* repository/service-interface layers
+* global state
+* context solely for API access
+* generic networking framework
+
+## 12. Tests
+
+Use Vitest, React Testing Library, and user-event.
+
+Mock `fetch` directly using Vitest capabilities.
+
+Do not add a network mocking framework unless a demonstrated need exists.
+
+Cover at minimum:
+
+### Success
+
+* Go selected by default or according to approved UI behavior
+* evaluation sends correct POST
+* request URL matches selected Go endpoint
+* payload contains canonical expression
+* successful result is displayed
+
+### Backend selection
+
+* switching to Java changes target URL
+* switching backend alone does not make a request
+* expression remains intact when backend changes
+
+### Application errors
+
+* backend error message is displayed
+* division-by-zero canonical message is displayed where represented by a mocked response
+* stale previous result is removed on failure
+
+### Connectivity
+
+* rejected fetch produces clear connectivity message
+* selected backend is reflected appropriately
+
+### Empty input
+
+* equals with empty expression does not call fetch
+* Enter with empty expression does not call fetch
+
+### Duplicate submission
+
+* repeated equals during in-flight request sends only one request
+* Enter during in-flight request does not send a duplicate request
+
+### Response validation
+
+* malformed success response does not produce a fake result
+* non-finite result response is rejected as invalid backend response
+
+### Shared evaluate path
+
+* Enter and equals both use the same API-backed behavior
+
+Do not depend on a running backend for component/unit tests.
+
+## 13. Existing behavior preservation
+
+Do not regress:
+
+* keypad construction
+* keyboard construction
+* clear/reset
+* backspace
+* display behavior
+* responsive layout
+* accessibility labels
+* frontend build/lint/coverage setup
+
+Do not modify `backend-go/`.
+
+## 14. Manual integration verification
+
+After automated tests pass, run the actual Go backend and frontend locally.
+
+Verify through the browser:
+
+### Go
+
+* select Go
+* evaluate a simple expression
+* evaluate a compound expression
+* evaluate an advanced expression
+* verify backend error display
+
+### Java
+
+* select Java
+* evaluate
+* verify controlled connectivity error because Java is not implemented/running yet
+
+Use browser DevTools Network if useful to confirm destination URLs.
+
+Do not implement Java to make this test pass.
+
+## 15. Verification commands
+
+From `frontend/`, run:
+
+`npm test -- --run`
+
+`npm run build`
+
+`npm run lint`
+
+`npm run coverage`
+
+Inspect:
+
+`npm ls --depth=0`
+
+Report:
+
+* test result
+* build result
+* lint result
+* coverage result
+* dependency result
+
+Confirm no unapproved dependency was introduced.
+
+## 16. Task tracking
+
+Update only:
+
+`TASK-FE-004`
+
+Mark it Complete only if its full Definition of Done is satisfied.
+
+Do not modify TASK-FE-005 or later task statuses.
+
+## 17. Prompt audit
+
+Update P018 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-FE-004 result
+* files created/modified
+* backend configuration approach
+* API client structure
+* backend selector behavior
+* request contract
+* success/error/connectivity behavior
+* duplicate-submit handling
+* runtime response validation
+* automated tests/results
+* manual Go integration result
+* manual Java connectivity-error result
+* build result
+* lint result
+* coverage result
+* dependency result
+* task status
+* confirmation that no frontend evaluator was implemented
+* confirmation that Java backend, Docker, and parity tooling were not implemented
+* confirmation that backend-go was not modified
+
+Do not rewrite prior prompts/outcomes.
+
+## 18. Required report
+
+After implementation report:
+
+1. files created/modified
+2. backend configuration structure
+3. API client structure
+4. request payload example
+5. backend selector behavior
+6. success handling
+7. calculator error handling
+8. connectivity handling
+9. stale-result behavior
+10. duplicate-submit behavior
+11. runtime response validation
+12. representative tests
+13. test result
+14. build result
+15. lint result
+16. coverage result
+17. dependency summary
+18. manual Go browser integration result
+19. manual Java connectivity result
+20. `git diff --stat`
+21. `git status`
+22. TASK-FE-004 status
+23. remaining work beginning with TASK-FE-005
+24. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-FE-004 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-FE-004`. Created `frontend/src/api/calculator.ts` as the only production native-fetch boundary and `frontend/src/components/BackendSelector.tsx` as a semantic Go/Java radio selector. Modified `frontend/src/config.ts` to export the centralized backend type and labels while retaining the Vite-configured defaults `http://localhost:8080` and `http://localhost:8081`; modified `Calculator.tsx` with selected-backend, loading, success, error, stale-output, and synchronous in-flight state; modified `Display.tsx` to display numeric results and minimal `Calculating…` feedback; modified `Keypad.tsx` to disable and mark Equals busy during requests; modified `App.css` only for the secondary segmented selector and disabled control state; and expanded `App.test.tsx` with direct fetch-mock integration tests. Modified only TASK-FE-004 in `TASKS.md` to Complete and recorded P018 and this outcome in `docs/ai-prompts.md`.
+
+The API client receives a `Backend` and canonical expression, selects its URL from the isolated Vite configuration, and sends `POST {backendUrl}/api/calculate` with `Content-Type: application/json` and `JSON.stringify({ expression })`. Successful bodies are treated as `unknown` and accepted only when they are a non-array object containing exactly one `result` member whose value is a finite JavaScript number. Invalid JSON, missing/string/non-finite results, arrays/null, or an extra success member yield only `The backend returned an invalid response`. Valid non-success objects with string `code` and `message` surface only the backend message. Fetch rejection yields `Unable to reach the Go backend` or `Unable to reach the Java backend` without low-level diagnostics.
+
+Go is selected by default. Switching the radio selection makes no request and preserves expression state; the selected backend is resolved only when evaluation occurs. Enter and Equals call the same asynchronous `evaluate` action. Empty/whitespace expressions return before fetch. A ref-based guard is set synchronously before fetch so repeated Equals or Enter events cannot queue duplicates; Equals is disabled and the result region shows `Calculating…` while pending. Evaluation start clears stale result/error. Success displays the numeric result; failure displays the safe/canonical error and leaves no previous answer. Editing, clear, or backspace clears a prior answer/error. A submitted-expression snapshot prevents a late response from being shown after expression edits. No history model was added.
+
+The first verification pass had 23 passing tests, passing build and coverage, but ESLint correctly rejected synchronizing the stale-expression ref during render. Moved that synchronization into a React effect without suppressing the rule. After adding explicit result-on-edit coverage, the final `npm test -- --run` passed one file with 24 tests and zero failures. Tests cover default Go selection and exact URL/method/header/canonical payload; successful numeric rendering; Java-only targeting without selection-side requests or expression loss; canonical division-by-zero display and stale-result removal; selected-Java connectivity feedback without diagnostic leakage; empty Equals/Enter; shared Enter/Equals API behavior; synchronous duplicate prevention during a deferred request; malformed, string, non-finite, and extra-field success rejection; and clearing the prior answer on expression edits, while preserving all earlier keypad/keyboard/responsive tests. `npm run build` passed strict TypeScript and Vite production build. `npm run lint` passed. `npm run coverage` passed with 97.67% statements (84/86), 91.48% branches (43/47), 100% functions (21/21), and 97.61% lines (82/84); the uncovered paths are defensive invalid-JSON/unknown-thrown-value fallbacks, and no threshold was added. `npm ls --depth=0` passed with the unchanged approved dependency set and no new dependency.
+
+Manual integration used the actual Go server on port 8080, Vite on port 5173, and the locally installed headless Chrome DevTools protocol without adding project tooling. In the browser, the default Go selection returned result 5 for `2+3`, result 20 for `(2+3)*4`, and result 39 for `sqrt(81)+150*20%`; `1/0` displayed the backend canonical `Division by zero is not allowed` message. Switching to Java preserved the UI, targeted `http://localhost:8081/api/calculate`, and displayed the controlled `Unable to reach the Java backend` connectivity message because Java is intentionally absent. Captured browser network events contained only the configured `localhost:8080` and `localhost:8081` calculator URLs, including normal CORS preflight traffic. An initial temporary browser driver run completed its first Go request but failed to locate Clear because it searched only explicit aria-label attributes; the temporary driver was corrected to honor native visible button names and the complete integration run then passed. All Go, Vite, and Chrome processes were stopped; temporary browser files remained outside the repository under `/tmp`.
+
+Production review found exactly one `fetch` call, confined to `src/api/calculator.ts`, and no `eval`, dynamic Function, `Math` calculation, numeric parsing, reduction, expression parser, or frontend evaluator. Java backend, Docker, parity tooling, new operations, and unrelated redesign were not implemented. Generated outputs remain ignored. `backend-go/` was not modified. TASK-FE-004 is Complete and TASK-FE-005 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.

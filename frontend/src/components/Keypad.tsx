@@ -3,6 +3,7 @@ type KeypadProps = {
   onClear: () => void
   onBackspace: () => void
   onEvaluate: () => void
+  isEvaluating: boolean
 }
 
 const inputButtons = [
@@ -28,7 +29,13 @@ const inputButtons = [
   { label: '√', accessibleName: 'Square root', token: 'sqrt(' },
 ] as const
 
-function Keypad({ onInput, onClear, onBackspace, onEvaluate }: KeypadProps) {
+function Keypad({
+  onInput,
+  onClear,
+  onBackspace,
+  onEvaluate,
+  isEvaluating,
+}: KeypadProps) {
   return (
     <div className="keypad" aria-label="Calculator keypad">
       <button className="keypad__clear" type="button" onClick={onClear}>
@@ -42,8 +49,10 @@ function Keypad({ onInput, onClear, onBackspace, onEvaluate }: KeypadProps) {
         type="button"
         aria-label="Equals"
         onClick={onEvaluate}
+        disabled={isEvaluating}
+        aria-busy={isEvaluating}
       >
-        =
+        {isEvaluating ? '…' : '='}
       </button>
 
       {inputButtons.map((button) => (

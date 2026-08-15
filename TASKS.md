@@ -154,7 +154,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Native fetch API module, canonical payload translation, environment-based selected URL, result/application-error/connectivity handling, stale-result removal, in-flight duplicate prevention, and no request for empty input. Selection itself makes no request.
 - **Verification required:** Mock-network interaction tests for canonical payload/destination, success, calculator error, connectivity failure, stale answer, duplicate evaluate, selection, and empty expression.
 - **Definition of Done:** Observable API lifecycle matches `SPEC.md`; only the selected backend calculates and frontend code never evaluates expressions.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-FE-005 — Complete frontend quality gate
 

@@ -35,6 +35,50 @@ body {
   box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 30%);
 }
 
+.backend-selector {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.backend-selector legend {
+  margin-right: auto;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+}
+
+.backend-selector label {
+  cursor: pointer;
+}
+
+.backend-selector input {
+  position: absolute;
+  opacity: 0;
+}
+
+.backend-selector span {
+  display: block;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+}
+
+.backend-selector input:checked + span {
+  border-color: #818cf8;
+  color: #fff;
+  background: #3730a3;
+}
+
+.backend-selector input:focus-visible + span {
+  outline: 3px solid #818cf8;
+  outline-offset: 2px;
+}
+
 .display {
   display: grid;
   min-height: 7rem;
@@ -86,6 +130,11 @@ body {
 
 .keypad button:hover {
   background: #4b5563;
+}
+
+.keypad button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .keypad button:focus-visible {

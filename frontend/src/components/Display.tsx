@@ -1,17 +1,18 @@
 type DisplayProps = {
   expression: string
-  result: string | null
+  result: number | null
   error: string | null
+  isEvaluating: boolean
 }
 
-function Display({ expression, result, error }: DisplayProps) {
+function Display({ expression, result, error, isEvaluating }: DisplayProps) {
   return (
     <section className="display" aria-label="Calculator display">
       <output className="display__expression" aria-label="Expression">
         {expression || '0'}
       </output>
       <output className="display__result" aria-label="Result">
-        {result}
+        {isEvaluating ? 'Calculating…' : result}
       </output>
       <div className="display__error" aria-label="Error" aria-live="polite">
         {error}
