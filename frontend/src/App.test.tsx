@@ -65,6 +65,21 @@ test('constructs a canonical expression in keypad order', async () => {
   expect(screen.getByLabelText('Expression')).toHaveTextContent('12.5+3-4')
 })
 
+test('updates the display after every keypad action in the acceptance sequence', async () => {
+  const user = userEvent.setup()
+  render(<App />)
+
+  for (const [button, expression] of [
+    ['1', '1'],
+    ['2', '12'],
+    ['Addition', '12+'],
+    ['3', '12+3'],
+  ] as const) {
+    await user.click(screen.getByRole('button', { name: button }))
+    expect(screen.getByLabelText('Expression')).toHaveTextContent(expression)
+  }
+})
+
 test('maps presentation controls to canonical backend tokens', async () => {
   const user = userEvent.setup()
   render(<App />)
@@ -107,6 +122,9 @@ test('backspace removes one entered unit including square root', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Backspace' }))
   expect(screen.getByLabelText('Expression')).toHaveTextContent('0')
+
+  await user.click(screen.getByRole('button', { name: 'Backspace' }))
+  expect(screen.getByLabelText('Expression')).toHaveTextContent('0')
 })
 
 test('equals with an empty expression makes no network request', async () => {
@@ -130,6 +148,16 @@ test('constructs canonical expressions from supported keyboard keys', () => {
   expect(screen.getByLabelText('Expression')).toHaveTextContent(
     '0123456789.+-*/^%()',
   )
+})
+
+test('constructs the keyboard acceptance sequence as canonical syntax', () => {
+  render(<App />)
+
+  for (const key of '12*3') {
+    fireEvent.keyDown(window, { key })
+  }
+
+  expect(screen.getByLabelText('Expression')).toHaveTextContent('12*3')
 })
 
 test('ignores unsupported keyboard input and modified shortcuts', () => {
@@ -226,6 +254,32 @@ test('sends the canonical expression to the default Go backend and displays succ
   )
 })
 
+test.each([
+  ['Multiplication', ['2', 'Multiplication', '3'], '2*3'],
+  ['Division', ['8', 'Division', '2'], '8/2'],
+  ['Exponentiation', ['2', 'Exponentiation', '3'], '2^3'],
+  [
+    'Square root',
+    ['Square root', '8', '1', 'Close parenthesis'],
+    'sqrt(81)',
+  ],
+])('submits %s presentation controls as canonical syntax', async (_name, controls, expression) => {
+  const user = userEvent.setup()
+  const fetchMock = vi.fn().mockResolvedValue(mockResponse({ result: 1 }))
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  for (const control of controls) {
+    await user.click(screen.getByRole('button', { name: control }))
+  }
+  await user.click(screen.getByRole('button', { name: 'Equals' }))
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+    expression,
+  })
+})
+
 test('switching backend preserves expression and only Java is contacted on evaluation', async () => {
   const user = userEvent.setup()
   const fetchMock = vi.fn().mockResolvedValue(mockResponse({ result: 2 }))
@@ -243,6 +297,11 @@ test('switching backend preserves expression and only Java is contacted on evalu
   expect(fetchMock.mock.calls[0][0]).toBe(
     'http://localhost:8081/api/calculate',
   )
+  expect(fetchMock.mock.calls[0][1]).toEqual({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expression: '2' }),
+  })
 })
 
 test('displays canonical application errors and removes a stale result', async () => {
@@ -294,6 +353,46 @@ test('editing the expression clears the previous answer', async () => {
   expect(screen.getByLabelText('Result')).toBeEmptyDOMElement()
 })
 
+test('clear removes a successful result and the expression', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ result: 5 })))
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '5' })
+  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  expect(await screen.findByLabelText('Result')).toHaveTextContent('5')
+
+  await user.click(screen.getByRole('button', { name: 'Clear' }))
+  expect(screen.getByLabelText('Expression')).toHaveTextContent('0')
+  expect(screen.getByLabelText('Result')).toBeEmptyDOMElement()
+  expect(screen.getByLabelText('Error')).toBeEmptyDOMElement()
+})
+
+test('clear removes an error and the expression', async () => {
+  const user = userEvent.setup()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      mockResponse(
+        { code: 'INVALID_EXPRESSION', message: 'Expression is invalid' },
+        400,
+      ),
+    ),
+  )
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '2' })
+  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  expect(await screen.findByLabelText('Error')).toHaveTextContent(
+    'Expression is invalid',
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Clear' }))
+  expect(screen.getByLabelText('Expression')).toHaveTextContent('0')
+  expect(screen.getByLabelText('Result')).toBeEmptyDOMElement()
+  expect(screen.getByLabelText('Error')).toBeEmptyDOMElement()
+})
+
 test('reports selected-backend connectivity failures without leaking diagnostics', async () => {
   const user = userEvent.setup()
   const fetchMock = vi.fn().mockRejectedValue(new TypeError('connection refused'))
@@ -341,6 +440,27 @@ test('equals and Enter cannot duplicate an in-flight submission', async () => {
   await user.click(equals)
   fireEvent.keyDown(window, { key: 'Enter' })
   expect(fetchMock).toHaveBeenCalledTimes(1)
+
+  resolveResponse(mockResponse({ result: 4 }))
+  expect(await screen.findByLabelText('Result')).toHaveTextContent('4')
+})
+
+test('repeated Enter cannot duplicate an in-flight submission', async () => {
+  let resolveResponse: (response: Response) => void = () => undefined
+  const fetchMock = vi.fn().mockReturnValue(
+    new Promise<Response>((resolve) => {
+      resolveResponse = resolve
+    }),
+  )
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  fireEvent.keyDown(window, { key: '4' })
+  fireEvent.keyDown(window, { key: 'Enter' })
+  fireEvent.keyDown(window, { key: 'Enter' })
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+  expect(screen.getByLabelText('Result')).toHaveTextContent('Calculating…')
 
   resolveResponse(mockResponse({ result: 4 }))
   expect(await screen.findByLabelText('Result')).toHaveTextContent('4')

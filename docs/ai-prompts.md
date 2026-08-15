@@ -7634,3 +7634,575 @@ The first verification pass had 23 passing tests, passing build and coverage, bu
 Manual integration used the actual Go server on port 8080, Vite on port 5173, and the locally installed headless Chrome DevTools protocol without adding project tooling. In the browser, the default Go selection returned result 5 for `2+3`, result 20 for `(2+3)*4`, and result 39 for `sqrt(81)+150*20%`; `1/0` displayed the backend canonical `Division by zero is not allowed` message. Switching to Java preserved the UI, targeted `http://localhost:8081/api/calculate`, and displayed the controlled `Unable to reach the Java backend` connectivity message because Java is intentionally absent. Captured browser network events contained only the configured `localhost:8080` and `localhost:8081` calculator URLs, including normal CORS preflight traffic. An initial temporary browser driver run completed its first Go request but failed to locate Clear because it searched only explicit aria-label attributes; the temporary driver was corrected to honor native visible button names and the complete integration run then passed. All Go, Vite, and Chrome processes were stopped; temporary browser files remained outside the repository under `/tmp`.
 
 Production review found exactly one `fetch` call, confined to `src/api/calculator.ts`, and no `eval`, dynamic Function, `Math` calculation, numeric parsing, reduction, expression parser, or frontend evaluator. Java backend, Docker, parity tooling, new operations, and unrelated redesign were not implemented. Generated outputs remain ignored. `backend-go/` was not modified. TASK-FE-004 is Complete and TASK-FE-005 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
+
+## P019 — Frontend Quality Gate
+
+### Phase
+
+Verification — Frontend Quality Gate
+
+### Objective
+
+Execute only `TASK-FE-005` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, lint, responsive, accessibility, and integration verification of the React frontend and fix only demonstrated gaps within the already approved specification.
+
+### Prompt
+
+```text
+Prompt ID: P019
+
+Phase: Verification — Frontend Quality Gate
+
+Objective:
+Execute only `TASK-FE-005` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, lint, responsive, accessibility, and integration verification of the React frontend and fix only demonstrated gaps within the already approved specification.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-004.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P019` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-FE-005 — Complete frontend quality gate`
+
+Do NOT:
+
+* add new calculator features
+* change expression semantics
+* modify the REST contract
+* implement Java
+* implement Docker
+* implement parity tooling
+* add frontend mathematical evaluation
+* alter approved requirements, scope, specification, design, or ADRs
+
+If verification exposes a conflict with an approved artifact, stop and report it rather than silently redefining behavior.
+
+## 1. Acceptance review
+
+Review all frontend-relevant acceptance criteria in `SPEC.md`.
+
+At minimum, verify coverage for all:
+
+* `AC-UI-*`
+
+and any frontend-observable:
+
+* `AC-API-*`
+
+used by the approved UI integration.
+
+Create a compact acceptance checklist in the final report showing each criterion or grouped range and its concrete verification path.
+
+Do not claim coverage without a test or explicit manual verification path.
+
+## 2. Gap policy
+
+If an approved frontend criterion is not currently verified:
+
+* add the smallest necessary test or implementation correction
+* do not broaden scope
+* do not refactor unrelated working code
+* do not add a dependency unless a concrete approved need exists
+
+If behavior already satisfies the criterion but lacks a test, prefer adding the test.
+
+If implementation contradicts `SPEC.md`, fix implementation rather than changing the specification.
+
+## 3. Automated test suite
+
+Run the complete frontend test suite.
+
+Use the correct project script, expected to be equivalent to:
+
+`npm test -- --run`
+
+or the configured Vitest command.
+
+Report:
+
+* number of test files
+* total tests
+* passed tests
+* failed tests
+* skipped tests
+* final result
+
+No committed behavior test may remain failing.
+
+Do not use snapshot tests as the primary evidence of calculator behavior.
+
+## 4. Coverage
+
+Generate frontend coverage using the configured Vitest coverage tooling.
+
+Run:
+
+`npm run coverage`
+
+Report:
+
+* statement coverage
+* branch coverage
+* function coverage
+* line coverage
+* notable uncovered behavior, if any
+
+Do not create an arbitrary percentage threshold.
+
+Coverage is supporting evidence.
+
+Generated coverage output must remain ignored by Git.
+
+If coverage output appears in `git status`, fix repository hygiene rather than commit generated reports.
+
+## 5. TypeScript/build verification
+
+Run:
+
+`npm run build`
+
+The production build must succeed.
+
+Do not weaken TypeScript configuration or introduce unsafe casts merely to pass the build.
+
+Review compile warnings/errors and resolve legitimate issues.
+
+## 6. Lint verification
+
+Run:
+
+`npm run lint`
+
+Resolve legitimate lint findings.
+
+Do not disable rules broadly to make the gate pass.
+
+Do not add an additional overlapping formatter/linter stack.
+
+## 7. Dependency verification
+
+Run:
+
+`npm ls --depth=0`
+
+Review direct dependencies.
+
+Confirm:
+
+* React runtime dependencies are justified
+* Vite/TypeScript build tooling is justified
+* Vitest/Testing Library/user-event tooling is justified
+* no Axios
+* no Redux/Zustand/MobX
+* no React Router unless actually approved
+* no expression/math-evaluation library
+* no UI/CSS framework
+* no unapproved dependency
+
+Report any deviation.
+
+## 8. No frontend evaluator review
+
+Inspect the frontend implementation and explicitly confirm that it does not:
+
+* parse mathematical expressions for evaluation
+* compute arithmetic results
+* reproduce precedence rules
+* implement exponentiation mathematically
+* implement percentage mathematically
+* implement square root mathematically
+* use `eval`
+* use `Function`
+* use an expression-evaluation library
+
+The frontend may only construct and transport canonical expression syntax.
+
+If evaluation logic has leaked into the frontend, remove it and restore backend authority.
+
+## 9. Keypad verification
+
+Verify all committed keypad capabilities:
+
+* digits 0–9
+* decimal point
+* addition
+* subtraction
+* multiplication
+* division
+* exponentiation
+* percentage
+* square root
+* opening parenthesis
+* closing parenthesis
+* clear/reset
+* equals/evaluate
+* backspace if included in the approved UI
+
+Verify that presentation symbols map to canonical transport syntax.
+
+Do not verify only that buttons exist; verify observable expression construction.
+
+## 10. Keyboard verification
+
+Verify:
+
+* digits
+* `.`
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* `(`
+* `)`
+* Enter
+* Escape
+* Backspace
+
+Also verify:
+
+* unsupported alphabetic input does not mutate the expression
+* representative unsupported symbols do not mutate expression state
+* keyboard and keypad share the same underlying actions where applicable
+
+## 11. Clear and state lifecycle
+
+Verify:
+
+Clear/reset:
+
+* clears expression
+* clears result
+* clears error
+
+Successful evaluation:
+
+* displays current result
+* removes stale errors
+
+Failed evaluation:
+
+* displays current error
+* does not present stale previous result as current answer
+
+Backend change:
+
+* does not evaluate automatically
+* does not clear the current expression
+
+Empty expression:
+
+* equals does not issue a request
+* Enter does not issue a request
+
+## 12. Duplicate-submit behavior
+
+Verify that an in-flight request cannot be duplicated via:
+
+* repeated equals
+* repeated Enter
+* Enter plus equals combination
+
+Loading state must be minimally visible/understandable.
+
+Do not add request-queue infrastructure.
+
+## 13. Backend selection verification
+
+Verify:
+
+* Go and Java choices are visible
+* exactly one backend is selected
+* selected backend controls destination URL
+* Go maps to default `http://localhost:8080`
+* Java maps to default `http://localhost:8081`
+* Vite environment variables can override these defaults
+* backend switching itself performs no request
+* current expression is preserved across backend switching
+
+## 14. API contract verification
+
+Using mocked fetch behavior, verify:
+
+Request:
+
+`POST /api/calculate`
+
+JSON body:
+
+```json
+{
+  "expression": "..."
+}
+```
+
+Headers include:
+
+`Content-Type: application/json`
+
+Verify successful response handling:
+
+```json
+{
+  "result": 20
+}
+```
+
+Verify application error handling:
+
+```json
+{
+  "code": "DIVISION_BY_ZERO",
+  "message": "Division by zero is not allowed"
+}
+```
+
+Verify malformed nominal success responses are rejected safely.
+
+Do not duplicate backend validation rules in frontend.
+
+## 15. Connectivity behavior
+
+Verify rejected/unreachable fetch results in:
+
+* controlled user-facing connectivity error
+* no low-level browser exception text
+* no stale result
+* selected backend identification where useful
+
+Java may still be unavailable locally at this phase; that must be handled cleanly rather than treated as a frontend defect.
+
+## 16. Accessibility review
+
+Review the calculator for practical accessibility.
+
+At minimum confirm:
+
+* controls are semantic buttons/inputs where appropriate
+* controls have understandable accessible names
+* symbols such as square root/exponentiation/multiplication/division are not accessible by symbol alone when ambiguous
+* visible keyboard focus is preserved
+* expression/result/error regions are understandable to assistive technology
+* error state is announced appropriately where practical
+* native semantics are preferred over excessive ARIA
+
+Fix only concrete issues found.
+
+## 17. Responsive/manual viewport review
+
+Perform practical browser/DevTools verification at representative viewports.
+
+At minimum review approximately:
+
+* 320px width
+* 375px width
+* 768px width
+* desktop width
+
+Verify:
+
+* no horizontal page scrolling caused by calculator layout
+* keypad remains usable
+* buttons remain comfortably tappable
+* display remains readable
+* long expressions remain contained
+* backend selector remains usable
+* result/error feedback remains visible
+* calculator width remains sensible on desktop
+
+Do not add browser automation tooling just for this review.
+
+Document the manual observations factually.
+
+## 18. Live Go integration
+
+Run the already completed Go backend and the frontend locally.
+
+Verify through the actual browser:
+
+### Basic expression
+
+`2 + 3 * 4`
+
+Expected result:
+`14`
+
+### Parentheses
+
+`(2 + 3) * 4`
+
+Expected:
+`20`
+
+### Exponentiation
+
+`2 ^ 3 ^ 2`
+
+Expected:
+`512`
+
+### Square root / percentage
+
+Use at least one valid advanced expression.
+
+### Division by zero
+
+Verify canonical backend message displays correctly.
+
+### Invalid expression
+
+Verify canonical error displays correctly.
+
+Use Network DevTools if useful to confirm:
+
+* target URL
+* POST method
+* JSON payload
+* response
+
+Do not modify Go to accommodate a frontend bug unless an actual backend contract defect is demonstrated.
+
+## 19. Java-unavailable integration behavior
+
+Select Java while it is still unavailable/not running.
+
+Verify:
+
+* frontend remains functional
+* expression is preserved
+* evaluation fails with controlled connectivity feedback
+* switching back to Go restores working evaluation
+
+This is expected behavior at this stage.
+
+## 20. Repository hygiene
+
+After all commands:
+
+`git status --short`
+
+Confirm generated artifacts such as:
+
+* `node_modules/`
+* `dist/`
+* `coverage/`
+
+are ignored.
+
+Confirm no:
+
+* `.env` containing secrets
+* editor metadata
+* temporary logs
+* generated reports
+
+are staged or unintentionally tracked.
+
+If root `.gitignore` needs a concrete correction, make the smallest necessary change and report it.
+
+## 21. TASK-FE-005 completion
+
+Mark `TASK-FE-005` Complete only if:
+
+* all relevant acceptance criteria have a verification path
+* tests pass
+* coverage generation passes
+* build passes
+* lint passes
+* dependency review passes
+* no frontend evaluator exists
+* responsive review passes
+* accessibility review passes
+* live Go integration passes
+* Java unavailable behavior is controlled
+* no known committed frontend criterion remains uncovered
+
+Do not modify Java, parity, Docker, documentation, or final-task statuses.
+
+## 22. Prompt audit
+
+Update P019 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-FE-005 status
+* files modified
+* acceptance gaps found and fixed
+* automated test result
+* coverage metrics
+* build result
+* lint result
+* dependency review
+* no-evaluator review
+* accessibility review
+* responsive viewport observations
+* live Go integration results
+* Java-unavailable behavior
+* repository hygiene result
+* confirmation that no new feature was introduced
+* confirmation that Java, Docker, and parity implementation were not started
+
+Do not rewrite earlier prompts/outcomes.
+
+## 23. Required final report
+
+Report:
+
+1. acceptance-criteria coverage summary
+2. files modified during the quality gate
+3. gaps found and fixes made
+4. test files/test count/results
+5. coverage metrics
+6. build result
+7. lint result
+8. dependency summary
+9. no-frontend-evaluator review
+10. keypad verification
+11. keyboard verification
+12. state lifecycle verification
+13. duplicate-submit verification
+14. backend-selection verification
+15. API contract verification
+16. connectivity verification
+17. accessibility review
+18. 320px viewport observation
+19. 375px viewport observation
+20. 768px viewport observation
+21. desktop viewport observation
+22. live Go basic-expression result
+23. live Go compound-expression result
+24. live Go advanced-expression result
+25. live backend-error result
+26. Java-unavailable connectivity result
+27. repository hygiene result
+28. `git diff --stat`
+29. `git status`
+30. TASK-FE-005 final status
+31. remaining work beginning with TASK-JAVA-001
+32. any unresolved deviation/conflict
+
+Do not commit.
+Do not push.
+
+Stop after TASK-FE-005 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-FE-005`. Modified `frontend/src/App.test.tsx` to add the smallest missing acceptance evidence for step-by-step keypad construction, the exact keyboard construction sequence, empty-state backspace, canonical submission of multiplication/division/exponentiation/square-root presentation controls, the complete Java request contract, clear-after-success and clear-after-error state, and repeated-Enter duplicate prevention. Added `frontend/src/config.test.ts` for documented default backend URLs and Vite environment overrides. Practical browser review exposed one real desktop-layout gap: the bounded calculator remained left-aligned while its heading was centered. Added only `justify-items: center` to `frontend/src/App.css`; the repeated browser review then showed the 384px calculator centered at 768px and 1440px. Modified only TASK-FE-005 in `TASKS.md` to Complete and recorded P019 and this outcome here.
+
+The final `npm test -- --run` passed 2 test files with 35 tests, 35 passed, 0 failed, and 0 skipped. These tests provide a verification path for AC-UI-001–012 and AC-UI-015–016 plus frontend-observable AC-API-001–002; manual browser measurement and visual inspection provide the viewport path for AC-UI-013–014. No snapshot-primary tests were added. `npm run coverage` passed with 97.67% statements (84/86), 91.48% branches (43/47), 100% functions (21/21), and 97.61% lines (82/84). The two uncovered API-client lines are defensive invalid-JSON and unknown-thrown-value fallbacks; no arbitrary threshold was added. `npm run build` passed strict TypeScript and Vite 8.2.1 production compilation. `npm run lint` passed without suppression. `npm ls --depth=0` passed with React 19.2.8/React DOM 19.2.8 and the existing justified Vite, TypeScript, ESLint, Vitest, jsdom, V8 coverage, Testing Library, and user-event development toolchain. There is no Axios, state framework, router, expression evaluator, UI/CSS framework, or new dependency.
+
+Source review found exactly one production `fetch` call, confined to `src/api/calculator.ts`, and no expression parsing, arithmetic calculation, precedence implementation, `eval`, dynamic `Function`, `Math` calculation, numeric parsing/reduction, or expression/math library. Keypad and keyboard construct canonical syntax only. Accessibility browser inspection confirmed semantic type-button controls, two semantic radios with exactly one checked, explicit accessible names for multiplication/division/exponentiation/square root, `output` expression/result regions, a polite error live region, and a visible 3px focus outline. Native semantics remain primary.
+
+Live integration used the completed Go server on port 8080, Vite on port 5173, and the installed headless Chrome DevTools protocol without adding project tooling. The browser observed POST requests with canonical JSON payloads to `http://localhost:8080/api/calculate`. Go returned 14 for `2+3*4`, 20 for `(2+3)*4`, 512 for `2^3^2`, and 39 for `sqrt(81)+150*20%`. `1/0` displayed `Division by zero is not allowed`; `2+` displayed `Expression is invalid`, with no stale result. Selecting Java preserved `2+`, targeted `http://localhost:8081/api/calculate`, and displayed `Unable to reach the Java backend`; switching back to Go preserved the expression and restored the canonical Go invalid-expression response. An initial temporary driver attempt used the non-approved `127.0.0.1` frontend origin and timed out because the backend intentionally allows the approved localhost Vite origin; rerunning from `http://localhost:5173` passed without an application change.
+
+At measured widths 320px, 375px, 768px, and 1440px, page scroll width equaled viewport width, the backend selector remained contained, a 256-character expression remained present and contained in the scrolling display, and all keypad controls remained rendered. Minimum control dimensions were 57.59×52px, 70.25×52px, 78×56px, and 78×56px respectively. The calculator occupied 294.41px at 320px, 345px at 375px, and a centered bounded 384px at 768px and 1440px. Screenshots were visually reviewed for keypad reachability, readable display, visible selector, touch targets, and sensible desktop width. Go, Vite, and Chrome were stopped after verification; temporary browser files remained under `/tmp`.
+
+Repository hygiene passed: `frontend/node_modules/`, `frontend/dist/`, and `frontend/coverage/` are ignored and do not appear as commit candidates; no secret environment file, generated report, editor metadata, or temporary log was introduced. `git diff --check` passed. No new calculator feature or expression semantic was introduced. `backend-go/` was not modified, and Java, Docker, and parity implementation were not started. TASK-FE-005 is Complete; remaining implementation begins with TASK-JAVA-001. No unresolved conflict or deviation exists against REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.

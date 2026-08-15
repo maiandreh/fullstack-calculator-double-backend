@@ -165,7 +165,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Add only missing behavioral coverage; avoid snapshot-primary testing and presentation work unrelated to acceptance criteria.
 - **Verification required:** Full Vitest suite, coverage report, TypeScript/build verification, lightweight approved lint if configured, and practical responsive review.
 - **Definition of Done:** All frontend criteria have a passing verification path and build/coverage evidence; no known committed frontend criterion remains uncovered.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 6. Java Backend
 
