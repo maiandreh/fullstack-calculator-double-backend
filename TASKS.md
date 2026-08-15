@@ -246,7 +246,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** A lightweight repository-level script/fixture with one shared HTTP dataset against both live URLs; no Pact/heavy framework. Compare status, response shape, canonical errors/messages, exact numeric values when applicable, and otherwise absolute difference `≤ 1e-12`.
 - **Verification required:** Run the dataset against both live services for basic arithmetic, compound precedence, exponentiation, square root/percentage, division zero, invalid grammar/domain, and non-finite result; retain factual output evidence.
 - **Definition of Done:** All representative valid and invalid cases satisfy `SPEC-PAR-*`; failures identify the differing contract observation rather than internals.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 8. Docker
 

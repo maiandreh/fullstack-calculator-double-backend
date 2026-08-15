@@ -10750,3 +10750,398 @@ The packaged application started successfully on port 8081 for live smoke verifi
 Repository hygiene passed: `backend-java/target/` and its JaCoCo report are ignored, no generated artifact is staged or tracked, no `.idea`, secret, log, coverage, `node_modules`, or unexpected environment file is tracked, and the tracked `frontend/.env.example` is an intentional example configuration. An ignored local `.idea/` directory exists but is neither tracked nor reported by `git status`. `git diff --check` passed.
 
 No approved artifact conflict or architecture deviation was found. Frontend, Go, Docker, and cross-backend parity implementation were not modified or started. Remaining work begins with `TASK-PAR-001`.
+
+## P026 — Cross-Backend Parity
+
+### Prompt ID
+
+P026
+
+### Phase
+
+Integration Verification — Cross-Backend Parity
+
+### Objective
+
+Execute only `TASK-PAR-001` from `TASKS.md`: verify live behavioral parity between the independently implemented Go and Java calculator backends using one shared contract dataset.
+
+### Prompt
+
+````text
+Prompt ID: P026
+
+Phase: Integration Verification — Cross-Backend Parity
+
+Objective:
+Execute only `TASK-PAR-001` from `TASKS.md`: verify live behavioral parity between the independently implemented Go and Java calculator backends using one shared contract dataset.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and ADR-003.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P026` in `docs/ai-prompts.md` before modifying repository files.
+
+Execute only:
+
+`TASK-PAR-001 — Verify live backend parity`
+
+Do NOT:
+
+- change calculator semantics
+- add new calculator features
+- modify frontend behavior
+- implement Docker
+- rewrite either backend merely to make incidental implementation details match
+- alter approved requirements, scope, specification, design, or ADRs
+
+If parity reveals a behavioral conflict:
+
+- identify which implementation violates SPEC
+- fix only the non-conforming implementation
+- do not redefine SPEC to match existing code
+- report every correction explicitly
+
+## 1. Parity mechanism
+
+Create a lightweight repository-level parity verification mechanism.
+
+Prefer a small script under a clear location such as:
+
+`tools/`
+or
+`scripts/`
+
+Do not introduce:
+
+- Pact
+- contract-testing frameworks
+- Postman/Newman dependency
+- external testing libraries
+- new runtime dependency for either backend
+
+A small script using a language already available in the project environment is sufficient.
+
+Prefer Python standard library if Python is available, otherwise use another lightweight already-installed tool.
+
+Do not require users to install an additional package merely for parity verification.
+
+## 2. Live backend targets
+
+The parity verifier must target:
+
+Go:
+`http://localhost:8080`
+
+Java:
+`http://localhost:8081`
+
+Make URLs configurable through environment variables or simple command-line options if this can be done without unnecessary complexity.
+
+Use sensible local defaults.
+
+## 3. Shared dataset
+
+Use one shared dataset of calculator requests.
+
+Do not maintain separate expected datasets for Java and Go.
+
+Each parity case should define:
+
+- name
+- expression/request
+- expected status
+- expected response type
+- expected result or error contract
+
+The same case must run against both services.
+
+## 4. Required valid cases
+
+Include at minimum representative cases covering:
+
+### Basic arithmetic
+- addition
+- subtraction
+- multiplication
+- division
+
+### Decimal
+- a decimal-result calculation
+
+### Precedence
+`2 + 3 * 4`
+expected:
+`14`
+
+### Parentheses
+`(2 + 3) * 4`
+expected:
+`20`
+
+### Exponentiation
+`2 ^ 3`
+expected:
+`8`
+
+### Right-associative exponentiation
+`2 ^ 3 ^ 2`
+expected:
+`512`
+
+### Unary precedence
+`-2 ^ 2`
+expected:
+`-4`
+
+`(-2) ^ 2`
+expected:
+`4`
+
+### Signed exponent
+`2 ^ -2`
+expected:
+`0.25`
+
+### Percentage
+`20%`
+expected:
+`0.2`
+
+`150 * 20%`
+expected:
+`30`
+
+`100 + 20%`
+expected:
+`100.2`
+
+### Square root
+`sqrt(81)`
+expected:
+`9`
+
+`sqrt(9 + 7)`
+expected:
+`4`
+
+### Compound advanced expression
+Use one expression combining multiple approved capabilities.
+
+## 5. Required invalid cases
+
+Include at minimum:
+
+### Division by zero
+`1 / 0`
+
+Expected:
+- HTTP 400
+- code `DIVISION_BY_ZERO`
+- canonical message
+
+### Invalid grammar
+`2 +`
+
+Expected:
+- HTTP 400
+- code `INVALID_EXPRESSION`
+
+### Unsupported function
+`sin(1)`
+
+Expected:
+- HTTP 400
+- code `INVALID_EXPRESSION`
+
+### Unsupported scientific notation
+`1e3`
+
+Expected:
+- HTTP 400
+- code `INVALID_EXPRESSION`
+
+### Invalid domain
+`sqrt(-1)`
+
+Expected:
+- HTTP 400
+- code `INVALID_DOMAIN`
+
+### Non-finite result
+Use the same deterministic overflow expression accepted by the backend quality gates.
+
+Expected:
+- HTTP 400
+- code `NON_FINITE_RESULT`
+
+### Invalid request body
+Include representative request-level cases where practical, such as:
+- missing expression
+- empty expression
+
+Expected:
+- HTTP 400
+- canonical `INVALID_REQUEST`
+
+Do not include framework-specific 415 response-body parity unless SPEC requires it.
+
+## 6. Numeric comparison
+
+Use the numeric parity rule from `SPEC.md`.
+
+For results exactly representable and equal, exact equality is acceptable.
+
+For floating-point results where representation may differ:
+
+absolute difference must be:
+
+`<= 1e-12`
+
+Do not compare numeric results as formatted strings.
+
+Do not round backend outputs to force equality.
+
+## 7. Response parity
+
+For valid calculator requests verify both backends produce:
+
+- HTTP 200
+- same success response schema
+- finite numeric `result`
+- result satisfying the numeric parity rule
+
+For application-defined invalid requests verify both produce:
+
+- same HTTP status
+- same `code`
+- same canonical `message`
+
+Do not require byte-for-byte JSON serialization order.
+
+Compare semantics, not textual JSON ordering.
+
+## 8. Failure reporting
+
+When a parity case fails, report clearly:
+
+- case name
+- expression/request
+- Go observed status/body
+- Java observed status/body
+- expected contract
+- exact parity mismatch
+
+Do not hide failures.
+
+Return a non-zero process exit code if any parity case fails.
+
+Return zero only when all cases pass.
+
+## 9. Backend availability
+
+Before running the dataset:
+
+- check that Go backend is reachable
+- check that Java backend is reachable
+
+If either is unavailable:
+
+- fail clearly
+- identify which backend is unavailable
+- do not classify this as semantic parity failure
+
+Do not start or stop backend processes implicitly unless TASKS/DESIGN explicitly allows orchestration.
+
+Document how the human should start both services.
+
+## 10. No implementation coupling
+
+The parity verifier must use HTTP only.
+
+It must not:
+
+- import Go calculator packages
+- import Java classes
+- inspect backend source internals
+- call internal functions
+- rely on backend-specific test fixtures
+
+The API contract is the integration boundary.
+
+## 11. Corrections policy
+
+If the dataset identifies a real SPEC violation:
+
+1. identify the violated `SPEC-*` / `AC-*`
+2. fix only the non-conforming backend
+3. run that backend's relevant test suite
+4. run the full parity suite again
+5. document the correction in P026 Outcome
+
+Do not change both implementations merely to make them agree if one is wrong.
+
+Agreement is not sufficient; both must conform to SPEC.
+
+## 12. Verification workflow
+
+Before parity:
+
+Go:
+- confirm full Go tests still pass
+- confirm Go build still passes
+
+Java:
+- confirm Maven tests still pass
+- confirm Java package/build still passes
+
+Then run the parity verifier against both live services.
+
+Report:
+
+- total parity cases
+- passed
+- failed
+- result
+
+## 13. Representative manual confirmation
+
+After automated parity succeeds, manually verify through curl at least one identical request against both backends.
+
+Example:
+
+Go:
+
+`POST http://localhost:8080/api/calculate`
+
+Java:
+
+`POST http://localhost:8081/api/calculate`
+
+with:
+
+```json
+{
+  "expression": "sqrt(81) + 150 * 20%"
+}
+```
+````
+
+### Outcome
+
+Completed `TASK-PAR-001`. Created `scripts/check-parity.py`, updated only TASK-PAR-001 in `TASKS.md`, and recorded P026 in this audit trail. No backend, frontend, Docker, requirement, scope, specification, design, or ADR file was modified. No behavioral mismatch or SPEC violation was found, so no implementation correction was made.
+
+The parity verifier uses only Python 3 standard-library HTTP/JSON facilities and one shared immutable dataset for both live services. Defaults are `http://localhost:8080` and `http://localhost:8081`, overridable through `GO_BACKEND_URL` and `JAVA_BACKEND_URL`. It checks both `/health` endpoints before classifying parity, reports an unavailable backend separately with exit code 2, runs all calculator cases exclusively through `POST /api/calculate`, prints detailed expected and observed values for failures, returns 1 for semantic failures, and returns 0 only when every case passes. It imports no backend package/class, reads no backend fixture, and adds no dependency.
+
+The 26 shared cases comprise 18 valid and 8 invalid requests. Valid coverage includes all four basic operations, a decimal result, precedence, parentheses, exponentiation, right associativity, both unary/power cases, signed exponent, three percentage cases, two square-root cases, and the compound `sqrt(81) + 150 * 20% = 39`. Invalid coverage includes division zero, incomplete grammar, unsupported function, unsupported scientific notation, invalid square-root domain, deterministic `10 ^ 1000` overflow, missing expression, and empty expression. Success checks require HTTP 200, the exact one-member schema, a finite JSON number, the specified expected result, and Go/Java absolute difference at most `1e-12`. Error checks require HTTP 400, the exact two-member schema, and identical canonical code/message matching SPEC. JSON member order and formatted numeric strings are not compared; 415 body parity is excluded.
+
+Preflight verification passed after sandbox runtime restrictions required the Go commands to run with approved elevated execution: `gofmt -l .` produced no paths, `go test ./...` passed both Go packages, and `go build ./...` passed. Java `./mvnw test` passed 89 tests with 0 failures, errors, or skips, and `./mvnw package` completed with BUILD SUCCESS without skipping tests.
+
+The live parity run reported `total=26 passed=26 failed=0` and exited zero. Port 8080 was already occupied by a reachable Go service, so it was used and left running rather than replaced or stopped. The packaged Java service was started on port 8081 for the approved integration run and stopped cleanly afterward. Manual curl sent the identical `sqrt(81) + 150 * 20%` request to both services: Go returned HTTP 200 `{"result":39}` and Java returned HTTP 200 `{"result":39.0}`; both are finite numeric results with exact semantic equality.
+
+`TASK-PAR-001` is Complete. No unresolved parity deviation or approved-artifact conflict remains. Remaining work begins with `TASK-DOCKER-001`.
