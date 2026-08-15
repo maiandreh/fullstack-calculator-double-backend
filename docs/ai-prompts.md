@@ -10244,3 +10244,84 @@ Direct JUnit coverage verifies deterministic exponentiation overflow (`10 ^ 1000
 Final `./mvnw test` passed 80 tests: 79 direct domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` completed with BUILD SUCCESS. JaCoCo 0.8.15 analyzed 6 compiled classes and reported 96.36% instruction coverage (450/467), 92.68% branch coverage (76/82), 94.21% line coverage (114/121), and 89.23% method coverage (58/65), with no threshold. `./mvnw dependency:tree` passed with the unchanged dependency graph: Spring Boot Web is the only direct production dependency and Spring Boot Test is test-scoped. No new dependency, expression/parser library, validation framework, or architecture layer was added.
 
 `TASK-JAVA-004` is Complete and `TASK-JAVA-005` remains Not Started. The Maven Wrapper build, port 8081 configuration, `/health`, and all earlier Java domain semantics remain intact. The REST calculator API, request/response DTOs, HTTP error mapping, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. No deviation or conflict with SPEC, DESIGN, ADR-002, ADR-003, or TASKS was found.
+
+## P024 — Java REST API
+
+### Prompt ID
+
+P024
+
+### Phase
+
+Implementation — Java REST API
+
+### Objective
+
+Execute only `TASK-JAVA-005` from `TASKS.md`: expose the completed Java calculator domain through the shared REST contract defined in `SPEC.md`, preserving exact observable parity with the approved API contract and keeping HTTP concerns separate from domain evaluation.
+
+### Prompt
+
+````text
+Prompt ID: P024
+
+Phase: Implementation — Java REST API
+
+Objective:
+Execute only `TASK-JAVA-005` from `TASKS.md`: expose the completed Java calculator domain through the shared REST contract defined in `SPEC.md`, preserving exact observable parity with the approved API contract and keeping HTTP concerns separate from domain evaluation.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-003 and any other ADR directly referenced by `TASK-JAVA-005`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P024` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-005 — Expose Java REST contract`
+
+Do NOT implement:
+
+- new calculator semantics
+- parser changes unless required to fix a demonstrated defect
+- frontend changes
+- Go changes
+- Docker
+- cross-backend parity tooling
+- final Java quality-gate work beyond what is necessary to verify this task
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the Java domain cannot support the approved REST contract without changing semantics, stop and report the conflict instead of silently altering the domain or specification.
+
+## 1. Calculator endpoint
+
+Implement exactly:
+
+`POST /api/calculate`
+
+Request:
+
+```json
+{
+  "expression": "(2 + 3) * 4"
+}
+```
+````
+
+### Outcome
+
+Completed `TASK-JAVA-005`. Added the Java transport boundary under `backend-java/src/main/java/io/github/maiandreh/calculator/api/`: request, success-response, and error DTOs; `CalculatorController`; and a narrowly scoped malformed-request exception handler. Modified `CalculatorApplication` only to expose the existing HTTP-independent `ExpressionEvaluator` as a Spring bean. Added focused MockMvc coverage in `CalculatorControllerTest`, updated only TASK-JAVA-005 in `TASKS.md`, and recorded P024 in this audit trail. No parser or calculator semantics changed.
+
+`POST /api/calculate` consumes JSON and returns the exact one-member numeric success envelope. The controller rejects missing, null, non-string, empty, whitespace-only, and over-256-Unicode-character expressions as canonical `INVALID_REQUEST`; malformed JSON uses the same response. Strict JSON-node inspection prevents Jackson scalar-to-string coercion. Domain categories map exhaustively to the canonical `INVALID_EXPRESSION`, `DIVISION_BY_ZERO`, `INVALID_DOMAIN`, and `NON_FINITE_RESULT` codes/messages with HTTP 400. Unexpected exceptions are not converted to application-defined calculator errors, so dependency/parser messages are not copied into a custom response. Unsupported media remains framework-standard HTTP 415.
+
+Minimal CORS permits only `http://localhost:5173` for the calculator endpoint and supports the POST/Content-Type preflight. Focused tests verify the exact success schema, numeric result type, all request-boundary cases, the 256-character boundary, malformed JSON, representative mappings for every domain category, exact two-member error schemas, allowed/disallowed origins, preflight behavior, and unsupported media type.
+
+The first `./mvnw test` run exposed and demonstrated Jackson's undesired numeric-to-string coercion (`{"expression":42}` returned 200); the transport DTO was corrected to retain the JSON node type. The final `./mvnw test`, `./mvnw package`, and `./mvnw verify` runs each passed 89 tests with 0 failures, 0 errors, and 0 skipped, including 9 REST tests, 79 domain cases, and the preserved health test. JaCoCo 0.8.15 analyzed 11 classes and reported 96.76% instruction coverage (568/587), 91.84% branch coverage (90/98), 95.24% line coverage (140/147), and 97.06% method coverage (33/34), with no threshold. `./mvnw dependency:tree` passed with the unchanged direct dependencies: Spring Boot Web at compile scope and Spring Boot Test at test scope; no dependency was added.
+
+`TASK-JAVA-005` is Complete and `TASK-JAVA-006` remains Not Started. Backend B remains configured on port 8081 and `/health` remains intact. No frontend, Go backend, Docker, parity tooling, approved requirements, scope, specification, design, or ADR was modified. No deviation or conflict with the approved artifacts was found.

@@ -222,7 +222,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Controller/transport DTOs, JSON validation, exact result/error mapping, malformed JSON, safe unexpected failure behavior, and minimal local Vite-origin CORS. Domain remains HTTP-independent.
 - **Verification required:** Focused MockMvc tests for request validation, schemas, statuses, representative error mappings, CORS, and unsupported media type; avoid duplicating the full domain suite.
 - **Definition of Done:** Backend B exposes the exact shared contract on port `8081` with passing MockMvc tests and no dependency messages leaked.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-JAVA-006 — Complete Java quality gate
 
