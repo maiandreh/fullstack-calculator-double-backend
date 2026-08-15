@@ -296,7 +296,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Verification and narrowly scoped fixes only; any behavioral/architectural conflict returns to human approval rather than silently changing authority.
 - **Verification required:** Repository hygiene (clean intended tree; no tracked build artifacts, `.idea`, `node_modules`, coverage output, secrets, or unexpected env files); Go format/vet/tests/coverage/build; Java tests/JaCoCo/build; frontend tests/coverage/build; both smoke APIs; frontend→Go and frontend→Java; switching; parity suite; all images and Compose; calculator through both container choices; README clean-setup instructions and API examples; prompt disclosure; required files; end-to-end traceability from requirement through evidence.
 - **Definition of Done:** Every command and manual check passes; all deliverables exist; every committed criterion has evidence; intentional exceptions are explicit; working tree state is reviewed with the human before any commit.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 11. Recommended Commit Boundaries
 

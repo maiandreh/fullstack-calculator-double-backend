@@ -12523,3 +12523,410 @@ The AI disclosure audit confirmed an ordered, traceable base sequence from P001 
 Documentation was cross-checked against repository structure, manifests, frontend URL configuration, Compose topology, commands, accepted ADRs, and the authoritative requirements/scope/specification artifacts. All explicitly referenced repository paths and Markdown link targets exist. `docker compose config --services` resolved exactly `backend-go`, `backend-java`, and `frontend`; documented frontend npm scripts, Java Maven/JaCoCo configuration, Go module/version, ports, and Vite backend variables match their source files. No broken documentation link or path remained after the Compose filename correction. `git diff --check` passed.
 
 No application source, build manifest, runtime configuration, calculator behavior, REST contract, requirement, scope commitment, specification rule, or ADR was changed. `TASK-DOC-002` is Complete. The only remaining task is `TASK-FINAL-001`, which remains Not Started pending the final submission verification and human review.
+
+## P030 — Final Submission Verification
+
+### Prompt ID
+
+P030
+
+### Phase
+
+Final Submission Verification
+
+### Objective
+
+Execute only `TASK-FINAL-001` from `TASKS.md`: perform the complete final submission gate against the current repository state and produce factual verification evidence for every committed assessment requirement and project extension.
+
+### Prompt
+
+```text
+Prompt ID: P030
+
+Phase: Final Submission Verification
+
+Objective:
+Execute only `TASK-FINAL-001` from `TASKS.md`: perform the complete final submission gate against the current repository state and produce factual verification evidence for every committed assessment requirement and project extension.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read `README.md`.
+8. Read all accepted ADRs.
+9. Read `docs/ai-prompts.md`.
+10. Inspect the current Git status and repository structure.
+11. Record this exact prompt as `P030` in `docs/ai-prompts.md` before any repository modification.
+
+Execute only:
+
+`TASK-FINAL-001 — Execute full submission verification`
+
+Do NOT add features.
+Do NOT broaden scope.
+Do NOT change calculator semantics.
+Do NOT alter API contracts.
+Do NOT refactor working code for style.
+Do NOT modify approved requirements, scope, specification, design, or ADRs unless an objective documentation defect is discovered and human approval is required.
+
+This phase is verification first.
+
+If a failure is found:
+
+- identify the violated requirement/specification/acceptance criterion
+- apply only the smallest necessary correction
+- rerun the affected verification
+- report the correction explicitly
+
+## 1. Repository hygiene
+
+Verify:
+
+- working tree state
+- no tracked `node_modules`
+- no tracked frontend `dist`
+- no tracked Maven `target`
+- no tracked coverage output
+- no tracked `.idea`
+- no secrets
+- no unexpected `.env` files
+- no temporary logs/artifacts
+
+Use:
+
+`git status --short`
+
+and appropriate Git inspection commands.
+
+Report any issue.
+
+## 2. Go final gate
+
+From `backend-go/`, run:
+
+- `gofmt -l .`
+- `go vet ./...`
+- `go test ./...`
+- `go test -coverprofile=coverage.out ./...`
+- `go tool cover -func=coverage.out`
+- `go build ./...`
+- `go list -m all`
+
+Verify:
+
+- formatting clean
+- vet pass
+- tests pass
+- build pass
+- coverage generated
+- no unexpected third-party production dependency
+
+Report exact factual results.
+
+Remove or leave ignored generated coverage output appropriately.
+
+## 3. Java final gate
+
+From `backend-java/`, run:
+
+- `./mvnw test`
+- `./mvnw package`
+- confirm/generate JaCoCo report
+- `./mvnw dependency:tree`
+
+Verify:
+
+- all tests pass
+- package/build succeeds
+- JaCoCo report exists
+- dependency surface matches approved architecture
+- no Lombok
+- no expression library
+- no persistence/database dependency
+
+Report exact factual results.
+
+## 4. Frontend final gate
+
+From `frontend/`, run:
+
+- `npm test -- --run`
+- `npm run coverage`
+- `npm run lint`
+- `npm run build`
+- `npm ls --depth=0`
+
+Verify:
+
+- all tests pass
+- coverage generates
+- lint passes
+- build passes
+- dependencies match approved architecture
+- no frontend expression evaluator exists
+
+Report exact factual results.
+
+## 5. Native backend smoke verification
+
+Start Go and Java natively or otherwise use the already approved verified runtime method.
+
+Verify:
+
+### Go
+- `GET /health`
+- representative `POST /api/calculate`
+
+### Java
+- `GET /health`
+- same representative `POST /api/calculate`
+
+Use at least:
+
+`{"expression":"sqrt(81) + 150 * 20%"}`
+
+Verify semantically equivalent results.
+
+Stop processes cleanly.
+
+## 6. Cross-backend parity
+
+Run:
+
+`python3 scripts/check-parity.py`
+
+Verify:
+
+- all dataset cases pass
+- failure count is zero
+- status/error/numeric parity rules remain satisfied
+
+Report total, passed, failed.
+
+## 7. Docker final gate
+
+From repository root run:
+
+- `docker compose build`
+- `docker compose up -d`
+- `docker compose ps`
+
+Verify:
+
+- frontend image builds
+- Go image builds
+- Java image builds
+- all services start
+- backend health checks succeed where configured
+
+Verify host endpoints:
+
+- frontend `http://localhost:3000`
+- Go `http://localhost:8080`
+- Java `http://localhost:8081`
+
+Run the parity suite again against the containerized backends.
+
+Then run:
+
+`docker compose down`
+
+Confirm clean shutdown.
+
+Do not use destructive global Docker cleanup.
+
+## 8. Frontend-to-backend integration
+
+Verify the containerized frontend build/configuration is capable of routing to:
+
+- Go backend at localhost:8080
+- Java backend at localhost:8081
+
+Verify backend CORS accepts the containerized frontend origin:
+
+`http://localhost:3000`
+
+If interactive browser tooling is unavailable, state that explicitly.
+
+Do not falsely claim manual click verification.
+
+Record any human verification evidence already supplied by the human reviewer only if it is clearly distinguished from agent-executed verification.
+
+## 9. README validation
+
+Validate README against current repository reality.
+
+Check:
+
+- Docker quick-start command
+- native Go command
+- native Java command
+- frontend command
+- API examples
+- test commands
+- coverage commands
+- parity command
+- ports
+- paths
+- links
+- architecture statements
+- Go-primary wording
+- Java-extension wording
+- optional-feature wording
+- AI disclosure link
+
+Do not rewrite README if it is already correct.
+
+## 10. Assessment coverage
+
+Produce a concise final mapping showing evidence for all committed assessment expectations:
+
+- React frontend
+- intuitive/responsive UI
+- addition
+- subtraction
+- multiplication
+- division
+- exponentiation
+- square root
+- percentage
+- REST backend
+- input validation
+- division-by-zero handling
+- JSON results
+- frontend tests
+- backend tests
+- coverage
+- Go implementation
+- Docker
+- setup/run documentation
+- API examples
+- design decisions
+- AI prompt disclosure
+
+Also identify project-specific extensions:
+
+- Java backend
+- backend selector
+- cross-backend parity
+
+Do not misclassify extensions as source requirements.
+
+## 11. Traceability
+
+Verify every committed requirement/scope item has a path through:
+
+Requirement / Scope
+→ Specification
+→ Acceptance Criterion
+→ Task
+→ Verification evidence
+
+Report any gap.
+
+Do not invent evidence.
+
+## 12. Prompt disclosure final audit
+
+Verify `docs/ai-prompts.md` contains P001 through P030 and relevant continuations.
+
+Confirm:
+
+- exact prompts are preserved
+- outcomes are factual
+- blocked attempts remain visible
+- no secret/personal credential content is present
+- README links to the prompt log
+
+Do not rewrite historical prompts.
+
+## 13. TASKS completion
+
+Mark `TASK-FINAL-001` Complete only if every required verification passes and no unresolved committed-scope gap remains.
+
+After completion, TASKS.md should show all tasks Complete.
+
+Do not mark it Complete if any mandatory final gate remains unresolved.
+
+## 14. P030 Outcome
+
+Record factual evidence including:
+
+- TASK-FINAL-001 status
+- repository hygiene result
+- Go commands/results/coverage
+- Java commands/results/coverage
+- frontend commands/results/coverage
+- native smoke results
+- parity results
+- Docker build/start/health/parity/shutdown results
+- frontend integration/CORS verification
+- README validation result
+- assessment coverage result
+- traceability result
+- prompt audit result
+- any fix performed
+- final remaining issues, if any
+
+Do not rewrite previous prompt records.
+
+## 15. Required final report
+
+Report:
+
+1. repository hygiene
+2. Go test/vet/build/coverage result
+3. Java test/build/coverage result
+4. frontend test/lint/build/coverage result
+5. native Go smoke result
+6. native Java smoke result
+7. parity result
+8. Docker build result
+9. Docker startup/health result
+10. containerized parity result
+11. frontend integration/CORS result
+12. Docker shutdown result
+13. README validation result
+14. assessment coverage summary
+15. traceability result
+16. prompt disclosure audit result
+17. TASK completion summary
+18. files modified, if any
+19. `git diff --stat`
+20. `git status`
+21. TASK-FINAL-001 final status
+22. any unresolved concern
+
+Do not commit.
+Do not push.
+
+Stop for human review.
+```
+
+### Outcome
+
+Completed `TASK-FINAL-001` with no application correction required. Repository hygiene passed: the only expected tracked environment-related file is `frontend/.env.example`; no tracked `node_modules`, frontend `dist`, Maven `target`, coverage output, `.idea`, logs, temporary artifacts, or unexpected environment file was found. Generated Go, Java, and frontend build/coverage directories remain ignored. Targeted scans found no private keys, common cloud/API tokens, or bearer credentials. The initial working tree contained only the newly recorded P030 entry; no unrelated user change was overwritten.
+
+The Go gate passed: `gofmt -l .` produced no paths; `go vet ./...`, `go test ./...`, `go build ./...`, and `go list -m all` succeeded. Coverage generation passed with package statement coverage of 81.2% for `cmd/server`, 98.3% for `internal/expression`, and 93.5% total. `go list -m all` listed only `github.com/maiandreh/fullstack-calculator-double-backend/backend-go`, confirming no third-party Go module dependency.
+
+The Java gate passed with Java 21.0.12: `./mvnw test`, `./mvnw package`, and `./mvnw verify` each completed with 89 tests, 0 failures, 0 errors, and 0 skipped. The executable Spring Boot JAR was packaged, JaCoCo analyzed 11 classes and reported 568 of 587 instructions covered (96.76%), and `target/site/jacoco/index.html` exists. `./mvnw dependency:tree` matched the approved Spring Web and test surface; targeted inspection found no Lombok, expression-evaluation library, persistence, database, or cache dependency. The commands used the already required elevated runtime permission for Mockito agent attachment and loopback test ports; no project workaround was introduced.
+
+The frontend gate passed: `npm test -- --run` and `npm run coverage` each passed 2 files and 42 tests with zero failures. Coverage was 97.75% statements (87/89), 92.15% branches (47/51), 100% functions (21/21), and 97.70% lines (85/87). `npm run lint`, `npm run build`, and `npm ls --depth=0` passed. The dependency tree matches the approved React/TypeScript/Vite/Vitest/Testing Library/ESLint stack, and a production-source scan found no expression parser, mathematical evaluator, `eval`, dynamic `Function`, `Math` calculation, or numeric parsing implementation.
+
+Native smoke verification started Go on port 8080 and Java on port 8081. Both `GET /health` requests returned `{"status":"ok"}`. Both accepted `{"expression":"sqrt(81) + 150 * 20%"}` and returned the semantically equivalent result 39 (`{"result":39}` from Go and `{"result":39.0}` from Java). The native parity run passed all 26 cases with 0 failures. Go was interrupted after the smoke test and Java completed graceful shutdown.
+
+The Docker gate passed. `docker compose build` built the frontend, backend-go, and backend-java images. `docker compose up -d --wait` brought all three services to healthy state; `docker compose ps` showed host mappings 3000, 8080, and 8081. The frontend returned HTTP 200, both health endpoints returned OK, and both calculation endpoints returned 39 for the representative expression. The compiled frontend bundle contains exactly the expected browser destinations `http://localhost:8080` and `http://localhost:8081`. Both backends returned `Access-Control-Allow-Origin: http://localhost:3000` for live requests. Containerized parity again passed 26 of 26 cases with zero failures. `docker compose down` removed only this project's containers and default network, and final `docker compose ps -a` was empty.
+
+Interactive browser tooling was not available in this session, so no manual click or browser-console verification is claimed. Frontend tests, the compiled bundle URL inspection, live frontend HTTP response, selected-origin CORS calls, and successful live requests to both backends provide the agent-executed integration evidence. Historical browser evidence remains recorded in its original prompt outcomes and was not relabeled as part of this run.
+
+README validation passed against current manifests, source configuration, Compose, endpoints, scripts, and repository paths. Docker/native startup, API examples, test and coverage commands, parity invocation, ports, architecture, Go-primary wording, Java-extension wording, optional-source capabilities, and AI disclosure are accurate; every linked repository target exists. No README change was needed.
+
+Assessment coverage is complete: React and responsive calculator behavior are evidenced by the frontend suite and prior recorded viewport verification; all mandatory and committed optional operations, validation, division-zero handling, REST/JSON behavior, and both backend implementations are evidenced by domain/API tests, smoke calls, and parity; coverage, Docker, setup/run/API/design documentation, and AI disclosure are present and verified. Java, backend selection, and cross-backend parity remain correctly identified as project extensions rather than assessment-source requirements.
+
+Traceability passed with no gap: 35 requirement/constraint identifiers feed 29 specification rules and 58 unique acceptance criteria, then 24 tasks and their verification evidence. Apparent individual misses from a literal identifier scan are covered by explicit grouped matrix ranges such as `REQ-D-001–005`, `REQ-Q-001–003`, and `CON-004–005`. The prompt audit confirmed the ordered P001–P030 base sequence plus P007-R1, P007-R2, and P019-R1; every entry has Prompt ID, Phase, Objective, Prompt, and Outcome, blocked attempts remain visible, README links to the log, and targeted credential scans passed. Historical prompts and outcomes were not rewritten.
+
+Only `TASKS.md` and `docs/ai-prompts.md` were modified during P030: the prompt/outcome was recorded and `TASK-FINAL-001` was marked Complete. No product source, build manifest, runtime configuration, approved requirement, scope, specification, design, or ADR changed. All 24 tasks are now Complete. No unresolved committed-scope concern remains; final human review and the human-owned commit boundary remain outside the task.
