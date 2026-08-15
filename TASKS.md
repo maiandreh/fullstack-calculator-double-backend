@@ -233,7 +233,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Fix only identified acceptance gaps; generate JaCoCo evidence and run live smoke requests.
 - **Verification required:** Maven Wrapper test lifecycle, build/package, JaCoCo report, and manual success/error calls against the running service.
 - **Definition of Done:** All commands pass, evidence is reported, and no known committed Java/backend acceptance criterion remains uncovered.
-- **Status:** Not Started
+- **Status:** Complete
 
 ## 7. Cross-Backend Parity
 

@@ -10325,3 +10325,428 @@ Minimal CORS permits only `http://localhost:5173` for the calculator endpoint an
 The first `./mvnw test` run exposed and demonstrated Jackson's undesired numeric-to-string coercion (`{"expression":42}` returned 200); the transport DTO was corrected to retain the JSON node type. The final `./mvnw test`, `./mvnw package`, and `./mvnw verify` runs each passed 89 tests with 0 failures, 0 errors, and 0 skipped, including 9 REST tests, 79 domain cases, and the preserved health test. JaCoCo 0.8.15 analyzed 11 classes and reported 96.76% instruction coverage (568/587), 91.84% branch coverage (90/98), 95.24% line coverage (140/147), and 97.06% method coverage (33/34), with no threshold. `./mvnw dependency:tree` passed with the unchanged direct dependencies: Spring Boot Web at compile scope and Spring Boot Test at test scope; no dependency was added.
 
 `TASK-JAVA-005` is Complete and `TASK-JAVA-006` remains Not Started. Backend B remains configured on port 8081 and `/health` remains intact. No frontend, Go backend, Docker, parity tooling, approved requirements, scope, specification, design, or ADR was modified. No deviation or conflict with the approved artifacts was found.
+
+## P025 — Java Backend Quality Gate
+
+### Prompt ID
+
+P025
+
+### Phase
+
+Verification — Java Backend Quality Gate
+
+### Objective
+
+Execute only `TASK-JAVA-006` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, dependency, and smoke verification of the Java backend and fix only demonstrated gaps within the already approved specification.
+
+### Prompt
+
+```text
+Prompt ID: P025
+
+Phase: Verification — Java Backend Quality Gate
+
+Objective:
+Execute only `TASK-JAVA-006` from `TASKS.md`: perform a complete acceptance, quality, coverage, build, dependency, and smoke verification of the Java backend and fix only demonstrated gaps within the already approved specification.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and ADR-003.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P025` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-006 — Complete Java quality gate`
+
+Do NOT:
+
+- add new calculator features
+- alter expression grammar
+- change the REST contract
+- modify frontend
+- modify Go
+- implement Docker
+- implement cross-backend parity tooling
+- alter approved requirements, scope, specification, design, or ADRs
+
+If verification exposes a conflict with an approved artifact, stop and report it rather than changing the authority document.
+
+## 1. Acceptance review
+
+Review all Java/backend-relevant acceptance criteria in `SPEC.md`.
+
+At minimum verify coverage for:
+
+- all `AC-EXPR-*`
+- all `AC-API-*`
+- all `AC-ERR-*`
+
+Create a compact checklist in the final report showing each criterion or grouped criterion range and the concrete verification path proving it.
+
+Do not claim criterion coverage without a test or explicit smoke verification.
+
+## 2. Gap policy
+
+If a committed criterion is not currently verified:
+
+- add the smallest necessary test and/or implementation correction
+- do not broaden scope
+- do not refactor unrelated code
+- do not add dependencies unless an approved requirement clearly requires one
+
+If behavior is correct but lacks a test, prefer adding the test.
+
+If implementation conflicts with `SPEC.md`, fix the implementation rather than changing the specification.
+
+## 3. Full test suite
+
+Run:
+
+`./mvnw test`
+
+Report:
+
+- number of tests
+- failures
+- errors
+- skipped tests
+- final Maven result
+
+No committed-behavior test may remain failing.
+
+## 4. Build/package verification
+
+Run:
+
+`./mvnw package`
+
+The Java backend must package successfully.
+
+Do not skip tests just to obtain a successful package.
+
+## 5. Coverage
+
+Generate/confirm JaCoCo coverage using the existing Maven configuration.
+
+Report at minimum:
+
+- total instruction/line coverage where available
+- package-level observations where useful
+- notable uncovered behavior
+
+Do not add an arbitrary threshold.
+
+Coverage is supporting evidence, not the goal.
+
+Generated `target/` output must remain ignored.
+
+## 6. Dependency review
+
+Run:
+
+`./mvnw dependency:tree`
+
+Confirm the production dependency surface remains consistent with the approved architecture.
+
+Verify specifically:
+
+- Spring Boot Web/runtime only as justified
+- no Lombok
+- no persistence/JPA
+- no database driver
+- no expression/parser library
+- no mapping library
+- no unapproved dependency
+
+Report deviations if any.
+
+## 7. Domain/transport separation review
+
+Inspect the implementation and confirm:
+
+- parser/evaluator has no Spring MVC dependency
+- domain logic has no HTTP dependency
+- controller remains thin
+- domain errors are mapped at the transport boundary
+- raw parser/Java exception messages do not leak into the public API
+- health endpoint remains infrastructure-only
+
+If separation regressed, make only the smallest necessary correction.
+
+## 8. Expression semantics review
+
+Verify representative cases for:
+
+### Core arithmetic
+- `2 + 3 = 5`
+- `7 - 2 = 5`
+- `4 * 5 = 20`
+- `10 / 4 = 2.5`
+
+### Precedence
+- `2 + 3 * 4 = 14`
+- `(2 + 3) * 4 = 20`
+
+### Associativity
+- `10 - 3 - 2 = 5`
+- `20 / 5 / 2 = 2`
+
+### Exponentiation
+- `2 ^ 3 = 8`
+- `2 ^ 3 ^ 2 = 512`
+- `2 ^ -2 = 0.25`
+
+### Unary/power precedence
+- `-2 ^ 2 = -4`
+- `(-2) ^ 2 = 4`
+
+### Percentage
+- `20% = 0.2`
+- `150 * 20% = 30`
+- `100 + 20% = 100.2`
+
+### Square root
+- `sqrt(81) = 9`
+- `sqrt(9 + 7) = 4`
+
+## 9. Error review
+
+Verify canonical domain/API behavior for:
+
+### Division by zero
+Expression:
+`1 / 0`
+
+Expected:
+- HTTP 400
+- code `DIVISION_BY_ZERO`
+- canonical message
+
+### Invalid expression
+Expression:
+`2 +`
+
+Expected:
+- HTTP 400
+- `INVALID_EXPRESSION`
+
+### Invalid domain
+Expression:
+`sqrt(-1)`
+
+Expected:
+- HTTP 400
+- `INVALID_DOMAIN`
+
+### Non-finite result
+Use a deterministic supported expression that overflows binary64.
+
+Expected:
+- HTTP 400
+- `NON_FINITE_RESULT`
+
+### Invalid request
+Verify representative:
+- missing expression
+- null expression
+- non-string expression
+- empty expression
+- >256 characters
+- malformed JSON
+
+## 10. HTTP contract review
+
+Verify:
+
+- POST `/api/calculate`
+- JSON request body
+- successful JSON number response
+- canonical application error structure
+- application-defined 400 statuses
+- unsupported media type returns 415
+- CORS supports the approved local Vite origin
+- no internal diagnostic leakage
+
+Do not over-test framework behavior outside the calculator contract.
+
+## 11. Live smoke verification
+
+Start the Java backend on port 8081.
+
+Verify at minimum:
+
+### Health
+`GET /health`
+
+Expected:
+HTTP 200
+
+### Basic
+`2 + 3 * 4`
+
+Expected:
+14
+
+### Parenthesized
+`(2 + 3) * 4`
+
+Expected:
+20
+
+### Exponentiation
+`2 ^ 3 ^ 2`
+
+Expected:
+512
+
+### Unary precedence
+`-2 ^ 2`
+Expected:
+-4
+
+`(-2) ^ 2`
+Expected:
+4
+
+### Advanced
+`sqrt(81) + 150 * 20%`
+
+Verify expected result from SPEC.
+
+### Errors
+- division by zero
+- invalid expression
+- invalid domain
+- non-finite result
+
+Stop the application after smoke verification.
+
+## 12. Architecture discipline
+
+Confirm:
+
+- no third-party expression evaluator
+- no parser generator
+- no unnecessary service interfaces
+- no repository/persistence layer
+- no Strategy/Factory ceremony
+- no Lombok
+- no unrelated infrastructure
+- Java remains an independent implementation of SPEC, not a structural clone requirement of Go
+
+Report any deviation.
+
+## 13. Repository hygiene
+
+Run:
+
+`git status --short`
+
+Confirm generated artifacts such as:
+
+- `target/`
+- JaCoCo reports
+- temporary build files
+
+are ignored and not staged.
+
+Confirm no `.idea`, secrets, logs, or unexpected env files are being tracked.
+
+If `.gitignore` needs a concrete correction, make the smallest required change and explain it.
+
+## 14. TASK-JAVA-006 completion
+
+Mark `TASK-JAVA-006` Complete only if:
+
+- all Java/backend acceptance criteria have a verification path
+- tests pass
+- package/build passes
+- JaCoCo generation succeeds
+- dependency review passes
+- domain/transport separation is intact
+- smoke tests pass
+- no known committed Java/backend acceptance gap remains
+
+Do not modify parity, Docker, documentation, or final-task statuses.
+
+## 15. Prompt audit
+
+Update P025 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+- TASK-JAVA-006 status
+- files modified
+- gaps found/fixed
+- test result
+- package/build result
+- JaCoCo result
+- dependency review
+- domain/transport separation review
+- architecture review
+- smoke-test results
+- repository-hygiene result
+- confirmation that no new feature was introduced
+- confirmation that frontend, Go, Docker, and parity implementation were not modified/started
+
+Do not rewrite prior prompts/outcomes.
+
+## 16. Required final report
+
+Report:
+
+1. acceptance-criteria coverage summary
+2. files modified
+3. gaps found and fixes made
+4. test count/results
+5. package/build result
+6. JaCoCo result
+7. dependency summary
+8. domain/transport separation review
+9. architecture-discipline review
+10. health smoke result
+11. basic-expression result
+12. parenthesized-expression result
+13. exponentiation result
+14. unary-precedence results
+15. advanced-expression result
+16. division-by-zero result
+17. invalid-expression result
+18. invalid-domain result
+19. non-finite-result result
+20. repository hygiene result
+21. `git diff --stat`
+22. `git status`
+23. TASK-JAVA-006 final status
+24. remaining work beginning with TASK-PAR-001
+25. any unresolved deviation/conflict
+
+Do not commit.
+Do not push.
+
+Stop after TASK-JAVA-006 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-JAVA-006` and marked only that task Complete. Modified `TASKS.md` and `docs/ai-prompts.md`; no Java source or test file required modification because the acceptance review found no unverified committed Java/backend behavior and all existing verification passed. No feature, grammar rule, REST behavior, dependency, or architecture layer was introduced.
+
+All `AC-EXPR-001`–`AC-EXPR-020` have direct JUnit verification in `ExpressionEvaluatorTest`: numeric/literal behavior, core arithmetic, precedence, grouping, associativity, unary/power interaction, right-associative exponentiation, signed exponents, percentage, square root, canonical-token rejection, invalid grammar, and the 256-character boundary. `AC-API-001`–`AC-API-003` and the transport aspects of `AC-ERR-001`–`AC-ERR-012` have focused MockMvc verification in `CalculatorControllerTest`, combined with the domain-category assertions for all specified expression errors. The health endpoint has its independent integration test.
+
+`./mvnw test` passed 89 tests (9 REST, 79 domain, 1 health), with 0 failures, 0 errors, and 0 skipped. `./mvnw package` completed with BUILD SUCCESS without skipping tests. `./mvnw verify` completed with BUILD SUCCESS and generated the JaCoCo report for 11 classes. Aggregate coverage was 96.76% instructions (568/587), 95.24% lines (140/147), 91.84% branches (90/98), and 97.06% methods (33/34). The small uncovered portion consists of incidental bootstrap/defensive paths rather than a known committed-behavior gap; no arbitrary threshold was added.
+
+`./mvnw dependency:tree` passed. Direct dependencies remain only Spring Boot Web at compile scope and Spring Boot Test at test scope. There is no Lombok, persistence/JPA, database driver, expression/parser library, mapping library, or unapproved direct dependency. Spring's transitive `spring-expression` module is not used by the calculator evaluator.
+
+Architecture inspection confirmed that `domain/` imports no Spring MVC, HTTP, servlet, or network type; the evaluator and typed domain errors remain directly testable and transport-independent. The controller performs request validation, invokes the evaluator, and maps domain categories to canonical DTOs. Raw exception/parser messages are never placed in calculator responses. The health controller remains an infrastructure-only constant status endpoint. No service interface, repository/persistence layer, Strategy/Factory framework, parser generator, third-party evaluator, Lombok, or unrelated infrastructure exists. Java remains an independent recursive-descent implementation of `SPEC.md`.
+
+The packaged application started successfully on port 8081 for live smoke verification after the sandbox socket restriction required an approved unsandboxed local run. Live observations were: `GET /health` → HTTP 200 `{"status":"ok"}`; `2 + 3 * 4` → HTTP 200 `{"result":14.0}`; `(2 + 3) * 4` → 20.0; `2 ^ 3 ^ 2` → 512.0; `-2 ^ 2` → -4.0; `(-2) ^ 2` → 4.0; and `sqrt(81) + 150 * 20%` → 39.0. Error requests returned HTTP 400 with exact canonical envelopes: `1 / 0` → `DIVISION_BY_ZERO`; `2 +` → `INVALID_EXPRESSION`; `sqrt(-1)` → `INVALID_DOMAIN`; `10 ^ 1000` → `NON_FINITE_RESULT`. The service was stopped cleanly afterward.
+
+Repository hygiene passed: `backend-java/target/` and its JaCoCo report are ignored, no generated artifact is staged or tracked, no `.idea`, secret, log, coverage, `node_modules`, or unexpected environment file is tracked, and the tracked `frontend/.env.example` is an intentional example configuration. An ignored local `.idea/` directory exists but is neither tracked nor reported by `git status`. `git diff --check` passed.
+
+No approved artifact conflict or architecture deviation was found. Frontend, Go, Docker, and cross-backend parity implementation were not modified or started. Remaining work begins with `TASK-PAR-001`.
