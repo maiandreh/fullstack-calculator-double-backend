@@ -9015,3 +9015,449 @@ Created `backend-java/pom.xml`, `backend-java/mvnw`, `backend-java/mvnw.cmd`, `b
 `./mvnw test` passed with 1 test, 0 failures, 0 errors, and 0 skipped. `./mvnw package` passed and produced the executable Spring Boot jar under ignored `target/`. `./mvnw verify` passed and JaCoCo generated `target/site/jacoco/` after analyzing 2 production classes; coverage recorded 10/15 instructions, 3/5 lines, and 3/4 methods, with no threshold introduced. `./mvnw dependency:tree` passed. The only direct dependencies are `spring-boot-starter-web` at compile scope and `spring-boot-starter-test` at test scope; JaCoCo and Spring Boot Maven plugins are build tooling. No Lombok, database driver, persistence starter, or calculator expression dependency was introduced. Spring Framework's transitive `spring-expression` module is part of the required Spring Web framework and is not used as a calculator evaluator.
 
 The packaged application started successfully on the configured default port 8081. `curl -i http://localhost:8081/health` returned HTTP 200, `Content-Type: application/json`, and `{"status":"ok"}`; the application then completed a graceful shutdown. Root `.gitignore` already ignores `target/`, `.idea/`, and `*.iml`, so no ignore-file change was necessary and generated Maven/JaCoCo output is absent from Git status. TASK-JAVA-001 is Complete; TASK-JAVA-002 and all later tasks remain unchanged. No parser, arithmetic, calculator domain behavior, `/api/calculate`, calculator DTO, or calculator error mapping was implemented. No frontend or Go-backend file was modified, and no Docker or parity work was started. No approved artifact was changed or contradicted.
+
+## P021 — Java Grammar and Core Arithmetic
+
+### Phase
+
+Implementation — Java Grammar and Core Arithmetic
+
+### Objective
+
+Execute only `TASK-JAVA-002` from `TASKS.md`: independently implement the bounded expression grammar foundation and mandatory arithmetic semantics in Java, without HTTP concerns and without copying the Go implementation structure.
+
+### Prompt
+
+```text
+Prompt ID: P021
+
+Phase: Implementation — Java Grammar and Core Arithmetic
+
+Objective:
+Execute only `TASK-JAVA-002` from `TASKS.md`: independently implement the bounded expression grammar foundation and mandatory arithmetic semantics in Java, without HTTP concerns and without copying the Go implementation structure.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and ADR-003.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P021` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-002 — Implement Java grammar and core arithmetic`
+
+Do NOT implement:
+
+* exponentiation
+* unary sign semantics beyond what is strictly necessary for the approved grammar foundation
+* percentage
+* square root evaluation
+* finite-result quality gate
+* REST calculator endpoint
+* request/response DTOs
+* HTTP error mapping
+* frontend changes
+* Go changes
+* Docker
+* parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the Java implementation exposes a conflict with `SPEC.md`, stop and report it rather than changing the specification.
+
+## 1. Domain boundary
+
+Create the smallest appropriate Java package structure for expression parsing/evaluation.
+
+Keep the domain independent from:
+
+* Spring MVC
+* HTTP
+* JSON
+* controllers
+* transport DTOs
+
+Do not create a service wrapper merely to separate the domain from HTTP.
+
+A direct calculator/evaluator domain package is sufficient.
+
+## 2. Independent Java implementation
+
+Implement the same approved behavior as the Go reference, but do not copy Go source structure mechanically.
+
+Use idiomatic Java 21.
+
+The shared artifact is `SPEC.md`, not source code.
+
+Do not inspect Go code merely to reproduce implementation details unless needed to diagnose a parity issue later.
+
+## 3. Closed grammar foundation
+
+Support the approved canonical syntax foundation:
+
+* decimal numeric literals
+* whitespace
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* parentheses
+* canonical `sqrt(...)` recognition where structurally required
+* complete input consumption
+
+The language remains a closed allowlist.
+
+Reject unsupported syntax deterministically.
+
+Do not use:
+
+* script engines
+* JavaScript engines
+* `ScriptEngine`
+* SpEL
+* expression-evaluation libraries
+* parser generators
+
+## 4. Numeric literals
+
+Support the approved decimal forms:
+
+* `0`
+* `12`
+* `12.5`
+* `0.5`
+* `.5`
+
+Reject:
+
+* `.`
+* `1.2.3`
+* `1e3`
+* locale comma forms
+* unsupported numeric formats
+
+Use Java `double` semantics consistent with the approved binary64 model.
+
+Do not use `BigDecimal` for evaluation.
+
+## 5. Parentheses and input consumption
+
+Support balanced and nested grouping.
+
+Reject:
+
+* unmatched opening parenthesis
+* unmatched closing parenthesis
+* invalid empty grouping
+* incomplete/trailing syntax
+* valid prefix followed by unsupported content
+
+Require complete expression consumption.
+
+## 6. Expression length
+
+Preserve the `SPEC.md` maximum expression length of 256 characters at the direct domain/evaluator entry boundary.
+
+The Java domain must remain safe when invoked directly without HTTP.
+
+Do not rely solely on future controller validation.
+
+## 7. Basic arithmetic
+
+Implement:
+
+* addition
+* subtraction
+* multiplication
+* division
+
+Required representative behavior:
+
+`2 + 3 = 5`
+
+`7 - 2 = 5`
+
+`4 * 5 = 20`
+
+`10 / 4 = 2.5`
+
+## 8. Precedence
+
+Implement conventional precedence:
+
+* multiplication/division bind tighter than addition/subtraction
+* parentheses override precedence
+
+Required:
+
+`2 + 3 * 4 = 14`
+
+`(2 + 3) * 4 = 20`
+
+`12 / 3 + 2 = 6`
+
+`12 / (3 + 1) = 3`
+
+Do not implement exponentiation semantics yet.
+
+## 9. Associativity
+
+Binary:
+
+* `+`
+* `-`
+* `*`
+* `/`
+
+must be left-associative.
+
+Required:
+
+`10 - 3 - 2 = 5`
+
+`20 / 5 / 2 = 2`
+
+## 10. Division by zero
+
+Division by numeric zero must produce the approved transport-independent domain error category.
+
+Treat positive and negative zero as zero divisors according to Java binary64 semantics.
+
+Do not return infinity.
+
+Do not map the error to HTTP yet.
+
+## 11. Parser architecture
+
+Use a small custom parser consistent with ADR-002.
+
+A recursive-descent or equivalent precedence parser is appropriate.
+
+Keep it small.
+
+Do not introduce:
+
+* parser frameworks
+* visitor frameworks
+* generic AST infrastructure
+* strategy/factory patterns
+* operator registries
+* reflection-based dispatch
+
+An AST is optional and should only exist if it materially simplifies this bounded grammar.
+
+Direct evaluation while parsing is acceptable.
+
+## 12. Error model
+
+Introduce only domain error categories required by this task.
+
+At minimum distinguish:
+
+* invalid expression
+* division by zero
+
+Keep them transport-independent.
+
+Do not include HTTP status codes.
+
+Do not expose internal parser diagnostics as future public API messages.
+
+Internal developer-facing details may exist if clearly separated from canonical public messages.
+
+## 13. Spring independence
+
+Direct domain tests must instantiate/use the evaluator without:
+
+* loading Spring
+* starting an application context
+* using MockMvc
+* opening a server port
+
+The expression domain must be testable as plain Java.
+
+## 14. Tests
+
+Use JUnit 5.
+
+Derive tests from `TASK-JAVA-002` and the referenced acceptance criteria.
+
+Cover at minimum:
+
+### Valid literals
+
+* integer
+* decimal
+* leading-dot decimal
+* whitespace
+* grouped value
+* nested groups
+
+### Invalid grammar
+
+* `.`
+* `1.2.3`
+* `1e3`
+* unsupported identifier
+* unsupported function
+* trailing operator
+* `2 ++ 3` if invalid per SPEC
+* unbalanced parentheses
+* invalid empty grouping
+* unsupported trailing content
+* > 256-character expression
+
+### Arithmetic
+
+* addition
+* subtraction
+* multiplication
+* division
+* decimal results
+
+### Precedence
+
+* multiplication before addition
+* grouping overriding precedence
+
+### Associativity
+
+* chained subtraction
+* chained division
+
+### Division by zero
+
+* positive zero
+* negative zero where constructible through the approved expression syntax
+
+Prefer parameterized/table-style JUnit tests where they improve clarity.
+
+Do not write MockMvc tests.
+
+## 15. Existing bootstrap preservation
+
+Do not regress TASK-JAVA-001.
+
+The backend must continue to:
+
+* build through `./mvnw`
+* start on port 8081
+* expose `/health`
+* pass bootstrap tests
+* generate JaCoCo output
+* use approved dependencies only
+
+Do not modify `backend-go/` or `frontend/`.
+
+## 16. Dependency discipline
+
+Do not add a production dependency.
+
+The parser must use Java/JDK functionality only.
+
+After implementation inspect:
+
+`./mvnw dependency:tree`
+
+Confirm no expression/parser library or unrelated dependency appeared.
+
+## 17. Verification
+
+From `backend-java/`, run:
+
+`./mvnw test`
+
+`./mvnw package`
+
+Generate/confirm JaCoCo report.
+
+Also inspect:
+
+`./mvnw dependency:tree`
+
+Report:
+
+* number of tests where practical
+* failures/errors
+* Maven result
+* package/build result
+* coverage result
+* dependency result
+
+## 18. Task tracking
+
+Update only:
+
+`TASK-JAVA-002`
+
+Mark it Complete only if its complete Verification and Definition of Done are satisfied.
+
+Do not modify TASK-JAVA-003 or later tasks.
+
+## 19. Prompt audit
+
+Update P021 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-JAVA-002 result
+* files created/modified
+* parser/evaluator structure
+* grammar foundation implemented
+* basic arithmetic implemented
+* precedence behavior
+* associativity behavior
+* division-by-zero handling
+* tests/results
+* package/build result
+* JaCoCo result
+* dependency result
+* task status
+* confirmation that exponentiation, percentage, square root evaluation, REST calculator API, Docker, and parity tooling were not implemented
+* confirmation that frontend and Go backend were not modified
+
+Do not rewrite previous prompts/outcomes.
+
+## 20. Required report
+
+After implementation report:
+
+1. files created/modified
+2. resulting Java domain structure
+3. concise parser design explanation
+4. representative grammar tests
+5. arithmetic tests
+6. precedence tests
+7. associativity tests
+8. division-by-zero test
+9. `./mvnw test` result
+10. `./mvnw package` result
+11. JaCoCo result
+12. dependency tree summary
+13. `git diff --stat`
+14. `git status`
+15. TASK-JAVA-002 status
+16. remaining work beginning with TASK-JAVA-003
+17. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-JAVA-002 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-JAVA-002`. Added the plain-Java domain package `io.github.maiandreh.calculator.domain` with `ExpressionEvaluator` and `CalculationException`, plus direct JUnit 5 coverage in `ExpressionEvaluatorTest`. The evaluator uses a small recursive-descent parser that evaluates while parsing: additive and multiplicative loops implement precedence and left associativity, primary parsing handles decimal literals and nested parentheses, and the minimal unary stage needed by the approved grammar permits signed zero detection. The entry boundary rejects null, blank, over-256-Unicode-character, incomplete, malformed, unsupported, or trailing input. Domain exceptions distinguish `INVALID_EXPRESSION` from `DIVISION_BY_ZERO` without HTTP concepts or parser diagnostics.
+
+Implemented Java `double` addition, subtraction, multiplication, and division. Verified `2 + 3 = 5`, `7 - 2 = 5`, `4 * 5 = 20`, `10 / 4 = 2.5`, binary64 decimal behavior, multiplication/division precedence, parenthesized precedence overrides, and left-associative subtraction/division. Both `1 / 0` and `1 / -0` produce the division-by-zero category. Valid decimal forms, whitespace, grouping, nested grouping, full consumption, a valid 256-character expression, and the overlength boundary are covered. Invalid cases include `.`, `1.2.3`, `1e3`, locale commas, identifiers, unsupported functions, `2 +`, `2 ++ 3`, unbalanced/empty grouping, trailing content, and advanced operators whose evaluation is intentionally deferred.
+
+Final `./mvnw test` passed 43 tests: 42 plain domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` both completed with BUILD SUCCESS. JaCoCo 0.8.15 generated its report after analyzing 6 compiled classes, recording 95.81% instruction coverage (343/358), 92.39% line coverage (85/92), 58/64 branches, and 86.79% method coverage (46/53), with no threshold. `./mvnw dependency:tree` passed and the dependency graph is unchanged: Spring Boot Web is the sole direct production dependency and Spring Boot Test is test-scoped; no parser or calculator-expression dependency was added. Spring's transitive framework `spring-expression` module is not used by the domain.
+
+`TASK-JAVA-002` is Complete and `TASK-JAVA-003` remains Not Started. Exponentiation, percentage, square-root evaluation, the comprehensive finite-result gate, `/api/calculate`, transport DTOs, HTTP error mapping, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. The implementation was derived from `SPEC.md` and the Java ADRs without inspecting or copying Go source. No conflict or deviation from the approved artifacts was found.

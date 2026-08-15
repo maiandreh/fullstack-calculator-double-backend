@@ -189,7 +189,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Independent bounded parser foundation, literals, whitespace, grouping, complete consumption, basic arithmetic/precedence/associativity, division-by-zero, and length/syntax boundaries. Do not copy incidental Go structure or add parser frameworks/factories/service interfaces.
 - **Verification required:** Direct JUnit domain tests for every listed criterion; no MockMvc required.
 - **Definition of Done:** Java core domain conforms to the specification independently and all focused tests pass.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-JAVA-003 — Implement Java advanced expression semantics
 
