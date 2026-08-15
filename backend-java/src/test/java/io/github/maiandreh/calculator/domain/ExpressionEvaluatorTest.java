@@ -3,8 +3,10 @@ package io.github.maiandreh.calculator.domain;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.DIVISION_BY_ZERO;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_DOMAIN;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_EXPRESSION;
+import static io.github.maiandreh.calculator.domain.CalculationException.Category.NON_FINITE_RESULT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -106,6 +108,24 @@ class ExpressionEvaluatorTest {
     @Test
     void distinguishesInvalidSquareRootDomain() {
         assertCategory(INVALID_DOMAIN, "sqrt(-1)");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2 + 3", "0.1 + 0.2", "2 ^ -2", "20%", "sqrt(81)"})
+    void successfulResultsAreFinite(String expression) {
+        assertTrue(Double.isFinite(evaluator.evaluate(expression)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"10 ^ 1000", "-10 ^ 1000", "10 ^ 200 * 10 ^ 200"})
+    void rejectsNonFiniteResultsAtEvaluatorBoundary(String expression) {
+        assertCategory(NON_FINITE_RESULT, expression);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"NaN", "Infinity", "Inf", "1e3"})
+    void textualNonFiniteValuesAndScientificNotationRemainInvalid(String expression) {
+        assertCategory(INVALID_EXPRESSION, expression);
     }
 
     private void assertCategory(CalculationException.Category expected, String expression) {

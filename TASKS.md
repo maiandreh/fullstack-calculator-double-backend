@@ -211,7 +211,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Reject non-finite literals/results and distinguish overflow/non-finite, division-zero, and invalid-domain errors.
 - **Verification required:** Direct JUnit tests for non-finite overflow, domain boundaries, error precedence, and finite decimal results.
 - **Definition of Done:** Java domain cannot return a non-finite success and exposes stable internal error categories.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-JAVA-005 — Expose Java REST contract
 

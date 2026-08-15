@@ -3,6 +3,7 @@ package io.github.maiandreh.calculator.domain;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.DIVISION_BY_ZERO;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_DOMAIN;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_EXPRESSION;
+import static io.github.maiandreh.calculator.domain.CalculationException.Category.NON_FINITE_RESULT;
 
 public final class ExpressionEvaluator {
     public static final int MAX_EXPRESSION_LENGTH = 256;
@@ -19,6 +20,9 @@ public final class ExpressionEvaluator {
         parser.skipWhitespace();
         if (!parser.atEnd()) {
             throw invalidExpression();
+        }
+        if (!Double.isFinite(result)) {
+            throw new CalculationException(NON_FINITE_RESULT);
         }
         return result;
     }

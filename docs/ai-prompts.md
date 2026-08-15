@@ -9900,3 +9900,347 @@ Added the transport-independent `INVALID_DOMAIN` category. `sqrt(-1)` returns th
 Final `./mvnw test` passed 68 tests: 67 direct domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` completed with BUILD SUCCESS. JaCoCo 0.8.15 analyzed 6 compiled classes and reported 96.25% instruction coverage (436/453), 92.50% branch coverage (74/80), 94.07% line coverage (111/118), and 89.06% method coverage (57/64), with no threshold. `./mvnw dependency:tree` passed with the unchanged direct dependency graph: Spring Boot Web at compile scope and Spring Boot Test at test scope. No expression/parser library, Lombok, or unrelated dependency was introduced; Spring Framework's transitive `spring-expression` module is not used by the calculator domain.
 
 `TASK-JAVA-003` is Complete and `TASK-JAVA-004` remains Not Started. The Maven Wrapper build, port 8081 configuration, `/health`, core grammar/arithmetic behavior, and bootstrap test remain intact. The REST calculator API, request/response DTOs, HTTP mapping, comprehensive finite-result gate, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. No deviation or conflict with SPEC, DESIGN, ADR-002, ADR-003, or TASKS was found.
+
+## P023 — Java Finite Result Enforcement
+
+### Phase
+
+Implementation — Java Finite Result Enforcement
+
+### Objective
+
+Execute only `TASK-JAVA-004` from `TASKS.md`: guarantee that the Java expression domain never returns NaN or infinity as a successful result and that non-finite outcomes are classified according to `SPEC.md`.
+
+### Prompt
+
+```text
+Prompt ID: P023
+
+Phase: Implementation — Java Finite Result Enforcement
+
+Objective:
+Execute only `TASK-JAVA-004` from `TASKS.md`: guarantee that the Java expression domain never returns NaN or infinity as a successful result and that non-finite outcomes are classified according to `SPEC.md`.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and ADR-003.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P023` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-004 — Enforce Java finite-result behavior`
+
+Do NOT implement:
+
+- REST calculator endpoint
+- request/response DTOs
+- HTTP error mapping
+- frontend changes
+- Go changes
+- Docker
+- parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the current evaluator exposes a conflict with `SPEC.md`, stop and report it instead of changing the contract.
+
+## 1. Finite success invariant
+
+The evaluator must guarantee:
+
+A successful evaluation result is always a finite Java `double`.
+
+Successful evaluation must never return:
+
+- `NaN`
+- positive infinity
+- negative infinity
+
+Use idiomatic Java/JDK checks such as `Double.isFinite`.
+
+Do not add dependencies.
+
+## 2. Error precedence
+
+Preserve the more specific approved domain errors.
+
+Examples:
+
+- division by zero → division-by-zero category
+- square root of a negative value → invalid-domain category
+
+These must not be replaced by a generic non-finite-result error merely because Java floating-point operations could otherwise produce infinity or NaN.
+
+Use the non-finite-result category only when no more specific approved domain error applies.
+
+## 3. Non-finite result cases
+
+Handle valid expressions whose numeric evaluation would otherwise produce a non-finite binary64 result.
+
+Representative examples may include:
+
+- exponentiation overflow
+- multiplication overflow
+- another finite-input operation resulting in infinity
+
+The evaluator boundary should enforce the finite-success invariant regardless of which operator caused the result.
+
+Do not scatter unnecessary finite checks through every parser method if one clear evaluation boundary provides the guarantee.
+
+## 4. Non-finite exponentiation/domain cases
+
+Be careful to distinguish:
+
+### Overflow
+A valid real-valued expression whose result exceeds finite binary64 range.
+
+Expected category:
+`NON_FINITE_RESULT`
+
+### Unsupported real-number domain
+A mathematically unsupported real result, where `SPEC.md` requires domain rejection.
+
+Expected category:
+`INVALID_DOMAIN`
+
+Do not rely only on whether `Math.pow` happens to return NaN or infinity; preserve the specification's semantic category where it defines one.
+
+## 5. Literal handling
+
+Do not add support for textual non-finite values such as:
+
+- `NaN`
+- `Infinity`
+- `Inf`
+
+Do not add scientific notation.
+
+Previously invalid literal forms must remain invalid expressions.
+
+## 6. Domain error model
+
+Ensure the Java domain has a distinct transport-independent category corresponding to:
+
+`NON_FINITE_RESULT`
+
+It must remain distinguishable from:
+
+- invalid expression
+- division by zero
+- invalid domain
+
+Do not add HTTP status codes or REST messages here.
+
+The future transport layer will map domain categories to the canonical API contract.
+
+## 7. Architecture
+
+Keep finite-result enforcement inside the domain/evaluator boundary.
+
+The domain must remain safe when called directly by tests without Spring MVC.
+
+Do not implement finite validation only in a future controller.
+
+Do not introduce:
+
+- service wrappers
+- validation frameworks
+- expression libraries
+- new architecture layers
+
+## 8. Existing semantics preservation
+
+Do not regress:
+
+- numeric literals
+- whitespace
+- grouping
+- expression length
+- invalid grammar rejection
+- basic arithmetic
+- precedence
+- associativity
+- division by zero
+- unary signs
+- exponentiation
+- right associativity
+- `-2 ^ 2 = -4`
+- `(-2) ^ 2 = 4`
+- `2 ^ -2 = 0.25`
+- percentage
+- square root
+- invalid square-root domain
+
+## 9. Tests
+
+Use direct JUnit 5 domain tests.
+
+Derive them from `TASK-JAVA-004` and relevant acceptance criteria.
+
+Cover at minimum:
+
+### Finite success
+- representative integer arithmetic
+- representative decimal result
+- representative advanced-operation result
+
+### Non-finite result
+- deterministic exponentiation overflow
+- another representative overflow path if practical
+
+### Error precedence
+- division by zero still returns division-by-zero category
+- negative square root still returns invalid-domain category
+
+### Invalid input preservation
+- textual `NaN` remains invalid
+- textual `Infinity` remains invalid
+- scientific notation remains invalid
+
+### Regression
+- representative arithmetic precedence
+- right-associative exponentiation
+- percentage
+- square root
+
+Do not add MockMvc tests.
+
+## 10. JaCoCo
+
+The new finite-result paths must be represented in the domain coverage report.
+
+Do not introduce a percentage coverage threshold.
+
+Coverage remains supporting evidence.
+
+## 11. Dependency discipline
+
+Do not add production dependencies.
+
+After implementation run:
+
+`./mvnw dependency:tree`
+
+Confirm no new dependency appeared.
+
+## 12. Existing bootstrap preservation
+
+Do not regress TASK-JAVA-001 through TASK-JAVA-003.
+
+The backend must continue to:
+
+- build via Maven Wrapper
+- start on port 8081
+- expose `/health`
+- pass all existing tests
+- generate JaCoCo
+- use only approved dependencies
+
+Do not modify `backend-go/` or `frontend/`.
+
+## 13. Verification
+
+From `backend-java/`, run:
+
+`./mvnw test`
+
+`./mvnw package`
+
+Generate/confirm JaCoCo report.
+
+Run:
+
+`./mvnw dependency:tree`
+
+Report:
+
+- number of tests where practical
+- failures/errors
+- package/build result
+- JaCoCo result
+- dependency result
+
+## 14. Task tracking
+
+Update only:
+
+`TASK-JAVA-004`
+
+Mark it Complete only if:
+
+- every successful domain result is finite
+- overflow/non-finite cases are deterministic
+- specific error precedence remains correct
+- tests pass
+- build/package passes
+- coverage generation passes
+- no new dependency exists
+
+Do not modify TASK-JAVA-005 or later task statuses.
+
+## 15. Prompt audit
+
+Update P023 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+- TASK-JAVA-004 result
+- files created/modified
+- finite-result invariant
+- representative overflow handling
+- non-finite domain category
+- division-zero error precedence
+- invalid-domain error precedence
+- tests/results
+- package/build result
+- JaCoCo result
+- dependency result
+- task status
+- confirmation that REST calculator API, Docker, and parity tooling were not implemented
+- confirmation that frontend and Go backend were not modified
+
+Do not rewrite prior prompts/outcomes.
+
+## 16. Required report
+
+After implementation report:
+
+1. files created/modified
+2. where the finite-result invariant is enforced
+3. representative exponentiation-overflow test/result
+4. another overflow test/result if implemented
+5. division-by-zero precedence test/result
+6. negative-square-root precedence test/result
+7. representative regression tests
+8. `./mvnw test`
+9. `./mvnw package`
+10. JaCoCo result
+11. dependency tree summary
+12. `git diff --stat`
+13. `git status`
+14. TASK-JAVA-004 status
+15. remaining work beginning with TASK-JAVA-005
+16. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-JAVA-004 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-JAVA-004`. Modified `backend-java/src/main/java/io/github/maiandreh/calculator/domain/ExpressionEvaluator.java`, `backend-java/src/main/java/io/github/maiandreh/calculator/domain/CalculationException.java`, and `backend-java/src/test/java/io/github/maiandreh/calculator/domain/ExpressionEvaluatorTest.java`; updated only TASK-JAVA-004 in `TASKS.md` and recorded P023 in this audit trail. Added the distinct transport-independent `NON_FINITE_RESULT` domain category without HTTP status or message concerns.
+
+The finite-success invariant is enforced once at the public `ExpressionEvaluator.evaluate` boundary, after parsing and complete-input validation and immediately before returning the result. `Double.isFinite` rejects either infinity or NaN that reaches that boundary, regardless of the operation that produced it. Parser/domain exceptions occur first, preserving the more specific `DIVISION_BY_ZERO` result for positive or negative zero divisors and `INVALID_DOMAIN` for negative square roots and other unsupported real-number power domains.
+
+Direct JUnit coverage verifies deterministic exponentiation overflow (`10 ^ 1000`), negative infinity (`-10 ^ 1000`), and multiplication overflow from finite operands (`10 ^ 200 * 10 ^ 200`) as `NON_FINITE_RESULT`. It also verifies finite integer, decimal, exponentiation, percentage, and square-root successes; division-zero and negative-square-root precedence; rejection of textual `NaN`, `Infinity`, `Inf`, and scientific notation; and the existing arithmetic, precedence, associativity, unary/power, percentage, square-root, length, and syntax behavior.
+
+Final `./mvnw test` passed 80 tests: 79 direct domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` completed with BUILD SUCCESS. JaCoCo 0.8.15 analyzed 6 compiled classes and reported 96.36% instruction coverage (450/467), 92.68% branch coverage (76/82), 94.21% line coverage (114/121), and 89.23% method coverage (58/65), with no threshold. `./mvnw dependency:tree` passed with the unchanged dependency graph: Spring Boot Web is the only direct production dependency and Spring Boot Test is test-scoped. No new dependency, expression/parser library, validation framework, or architecture layer was added.
+
+`TASK-JAVA-004` is Complete and `TASK-JAVA-005` remains Not Started. The Maven Wrapper build, port 8081 configuration, `/health`, and all earlier Java domain semantics remain intact. The REST calculator API, request/response DTOs, HTTP error mapping, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. No deviation or conflict with SPEC, DESIGN, ADR-002, ADR-003, or TASKS was found.

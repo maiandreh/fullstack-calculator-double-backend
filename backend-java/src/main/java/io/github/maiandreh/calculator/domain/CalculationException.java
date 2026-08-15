@@ -4,7 +4,8 @@ public final class CalculationException extends RuntimeException {
     public enum Category {
         INVALID_EXPRESSION,
         DIVISION_BY_ZERO,
-        INVALID_DOMAIN
+        INVALID_DOMAIN,
+        NON_FINITE_RESULT
     }
 
     private final Category category;
