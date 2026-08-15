@@ -143,7 +143,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Only approved keyboard characters/actions, Enter evaluation signal, Escape reset, Backspace behavior, mobile-first layout, and usable representative desktop layout. No arbitrary free-form editing or unrelated visual features.
 - **Verification required:** Keyboard interaction tests and practical mobile/desktop viewport review verifying reachability, operability, and readable feedback.
 - **Definition of Done:** Required keyboard and responsive behaviors work at representative viewports without expanding expression syntax.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-FE-004 — Integrate selected backend API
 

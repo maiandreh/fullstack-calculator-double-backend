@@ -6752,3 +6752,412 @@ Clear resets expression, result, and error state. Backspace removes the latest c
 `npm test -- --run` passed one test file with six tests and zero failures. The tests cover the complete keypad, default/current display, ordered digit/decimal/basic input, every presentation-to-canonical mapping, clear, character and square-root-unit backspace, and no-evaluation/no-network equals behavior. `npm run build` passed strict TypeScript compilation and the Vite production build. `npm run lint` passed. `npm run coverage` passed with 100% statements (25/25), branches (4/4), functions (12/12), and lines (24/24); no threshold was added. `npm ls --depth=0` passed with the same approved direct dependency set from TASK-FE-001 and no new dependency.
 
 Production-source review found no `fetch`, XMLHttpRequest, Axios, `eval`, dynamic Function, numeric parsing, reduction, or `Math` calculation. No mathematical parsing/evaluation, precedence, percentage, square-root, exponentiation, REST call, backend selection, keyboard handling, TASK-FE-003 responsive refinement, Java, Docker, or parity tooling was implemented. Generated `node_modules`, `dist`, and `coverage` remain ignored. `backend-go/` was not modified. TASK-FE-002 is Complete and TASK-FE-003 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
+
+## P017
+
+### Prompt ID
+
+P017
+
+### Phase
+
+Implementation — Frontend Keyboard and Responsive Behavior
+
+### Objective
+
+Execute only `TASK-FE-003` from `TASKS.md`: add the approved physical-keyboard interaction and responsive/mobile usability to the existing calculator UI without introducing backend communication or local mathematical evaluation.
+
+### Prompt
+
+```text
+Prompt ID: P017
+
+Phase: Implementation — Frontend Keyboard and Responsive Behavior
+
+Objective:
+Execute only `TASK-FE-003` from `TASKS.md`: add the approved physical-keyboard interaction and responsive/mobile usability to the existing calculator UI without introducing backend communication or local mathematical evaluation.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-004 and any other ADR directly referenced by `TASK-FE-003`.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P017` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-FE-003 — Implement keyboard and responsive behavior`
+
+Do NOT implement:
+
+* REST API calls
+* backend selection communication
+* mathematical evaluation in the frontend
+* Java backend
+* Docker
+* parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If current frontend behavior conflicts with `SPEC.md`, stop and report the conflict rather than silently redefining it.
+
+## 1. Keyboard interaction
+
+Implement only the keyboard behavior approved by `SPEC.md`.
+
+Supported physical-keyboard inputs must include:
+
+* digits `0` through `9`
+* `.`
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* `(`
+* `)`
+* Enter
+* Escape
+* Backspace
+
+Do not accept arbitrary free-form text.
+
+Unsupported keys must not mutate the expression.
+
+## 2. Keyboard action mapping
+
+Map keys as follows:
+
+* digits append their corresponding digit
+* `.` appends the decimal token
+* arithmetic/operator keys append their canonical token
+* `(` and `)` append grouping tokens
+* Enter triggers the same evaluate action boundary as the equals button
+* Escape performs the same clear/reset action as the clear button
+* Backspace performs the same deletion behavior as the visible backspace control
+
+Do not duplicate action logic between keyboard and keypad.
+
+Prefer routing both input sources through the same calculator actions/state transitions.
+
+## 3. Square root keyboard behavior
+
+Per `SPEC.md`, a dedicated square-root physical-key shortcut is not required.
+
+Do not add arbitrary alphabetic free-form entry merely to allow users to type `sqrt`.
+
+Square root remains available through the approved calculator control.
+
+Do not broaden keyboard syntax beyond the specification.
+
+## 4. Evaluate boundary
+
+Enter and the equals button must share one evaluation boundary.
+
+At this stage that boundary must still not:
+
+* perform arithmetic locally
+* make an API request
+
+Networking belongs to TASK-FE-004.
+
+If the existing equals action is represented by a callback/event, reuse it.
+
+Do not create fake results.
+
+## 5. Focus and event behavior
+
+Keyboard handling must work predictably without creating duplicate input when focus is on calculator controls.
+
+Avoid global event handling that:
+
+* interferes with browser shortcuts unnecessarily
+* processes the same event twice
+* captures unrelated keys
+
+Use a clear lifecycle for attaching/removing keyboard listeners if global listeners are used.
+
+Do not leak event listeners on rerender/unmount.
+
+## 6. Accessibility
+
+Preserve and improve accessibility where necessary.
+
+Ensure:
+
+* calculator controls remain keyboard-focusable
+* visible focus state is not removed
+* semantic buttons remain buttons
+* display regions remain understandable to assistive technology
+* keyboard support supplements rather than replaces accessible controls
+
+Do not use tabindex hacks or custom keyboard navigation when native behavior is sufficient.
+
+## 7. Responsive/mobile behavior
+
+Implement the responsive behavior required by `SPEC.md` and TASK-FE-003.
+
+Use a mobile-first approach.
+
+The calculator must remain usable at representative widths such as approximately:
+
+* 320px
+* 375px
+* 768px
+* desktop width
+
+These are verification examples, not mandatory hardcoded breakpoints.
+
+Priorities:
+
+* calculator fits without horizontal scrolling
+* keypad controls remain comfortably tappable
+* expression/result text remains readable
+* long expressions do not destroy layout
+* backend selector placeholder/region does not interfere with calculator controls
+* visual hierarchy remains clear
+* calculator does not expand to an unreasonable width on desktop
+
+Do not build separate mobile and desktop component trees.
+
+## 8. Long expression display
+
+Ensure the expression display remains usable when content grows.
+
+Choose a simple behavior consistent with calculator UX, such as:
+
+* wrapping where appropriate, or
+* horizontal overflow/scrolling within the display
+
+Do not allow long expressions to push the keypad outside the usable viewport horizontally.
+
+Do not truncate expression state internally merely for presentation.
+
+## 9. Touch targets
+
+Use reasonable button sizing and spacing for mobile interaction.
+
+Do not over-optimize to a specific device.
+
+Do not add a UI framework.
+
+## 10. Visual refinement scope
+
+This task may refine CSS necessary for responsive usability.
+
+Allowed:
+
+* responsive grid sizing
+* spacing
+* font sizing
+* max width
+* display overflow
+* touch-target dimensions
+* focus-visible styles
+
+Do not add:
+
+* themes
+* animations
+* dark-mode system
+* decorative illustration
+* design-system infrastructure
+* unrelated visual features
+
+Keep the UI professional and restrained.
+
+## 11. Tests
+
+Derive tests from TASK-FE-003 and relevant `AC-UI-*`.
+
+Using React Testing Library/user-event or appropriate DOM keyboard events, cover at minimum:
+
+### Keyboard construction
+
+* digits
+* decimal
+* `+`
+* `-`
+* `*`
+* `/`
+* `^`
+* `%`
+* parentheses
+
+### Keyboard actions
+
+* Escape clears
+* Backspace deletes
+* Enter invokes evaluate boundary
+
+### Unsupported input
+
+* unsupported alphabetic key does not alter expression
+* representative unsupported symbol does not alter expression
+
+### Shared behavior
+
+* keyboard and keypad produce the same canonical expression for equivalent inputs
+* Enter and equals use the same evaluation boundary
+* Escape and clear produce equivalent state
+* Backspace keyboard and control produce equivalent state
+
+Do not test CSS implementation details by class name where avoidable.
+
+## 12. Responsive verification
+
+Automated DOM tests do not prove visual responsiveness.
+
+Perform a practical visual review at representative viewport sizes.
+
+Report observations for:
+
+* small mobile
+* typical mobile
+* tablet/narrow desktop
+* desktop
+
+If browser automation is not part of the approved tooling, do not add it solely for this task.
+
+Manual browser/DevTools viewport verification is acceptable.
+
+Do not add Playwright/Cypress.
+
+## 13. No evaluation engine
+
+Review the code after implementation and confirm:
+
+* keyboard handlers only construct/edit expression state
+* no JavaScript arithmetic evaluator exists
+* no parser equivalent exists in frontend
+* result calculation remains a backend responsibility
+
+Do not introduce `eval`, `Function`, math-expression libraries, or hand-written frontend calculation.
+
+## 14. Existing behavior preservation
+
+Do not regress:
+
+* TASK-FE-001 bootstrap
+* TASK-FE-002 keypad
+* expression display
+* clear
+* backspace
+* canonical-token construction
+* accessibility labels
+* build/test/lint/coverage configuration
+
+Do not modify `backend-go/`.
+
+## 15. Verification
+
+From `frontend/`, run:
+
+`npm test -- --run`
+
+`npm run build`
+
+`npm run lint`
+
+`npm run coverage`
+
+Also inspect:
+
+`npm ls --depth=0`
+
+Report:
+
+* test count/result
+* build result
+* lint result
+* coverage summary
+* dependency result
+
+Confirm no new unapproved dependency was added.
+
+## 16. Task tracking
+
+Update only:
+
+`TASK-FE-003`
+
+Mark it Complete only if:
+
+* required keyboard behavior works
+* responsive behavior has been practically verified
+* tests pass
+* build passes
+* lint passes
+* coverage generation passes
+* no frontend evaluator exists
+
+Do not change TASK-FE-004 or later task statuses.
+
+## 17. Prompt audit
+
+Update P017 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+* TASK-FE-003 result
+* files modified
+* keyboard mappings implemented
+* shared keypad/keyboard action approach
+* responsive changes
+* representative viewport review
+* tests/results
+* build result
+* lint result
+* coverage result
+* dependency result
+* task status
+* confirmation that no API communication or mathematical evaluation was implemented
+* confirmation that backend-go was not modified
+
+Do not rewrite prior prompts/outcomes.
+
+## 18. Required report
+
+After implementation report:
+
+1. files modified
+2. keyboard-action architecture
+3. supported key mapping
+4. unsupported-key behavior
+5. representative keyboard tests
+6. shared keyboard/keypad behavior evidence
+7. responsive CSS/design changes
+8. viewport verification results
+9. accessibility observations
+10. test result
+11. build result
+12. lint result
+13. coverage result
+14. dependency summary
+15. `git diff --stat`
+16. `git status`
+17. TASK-FE-003 status
+18. remaining work beginning with TASK-FE-004
+19. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-FE-003 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-FE-003`. Modified `frontend/src/components/Calculator.tsx` to add the approved keyboard behavior through one lifecycle-managed `window` keydown listener and a shared optional evaluation callback; modified `frontend/src/App.css` with mobile-first sizing, overflow, touch-target, and restrained desktop-width refinements; modified `frontend/src/App.test.tsx` with keyboard, shared-action, unsupported-key, focused-control, and long-expression tests. Modified only TASK-FE-003 in `TASKS.md` to Complete and recorded P017 and this outcome in `docs/ai-prompts.md`.
+
+Digits `0`–`9`, `.`, `+`, `-`, `*`, `/`, `^`, `%`, `(`, and `)` append their canonical key directly through the same `appendToken` action used by keypad input. Enter calls the same `evaluate` boundary passed to the equals button; Escape calls the same `clear` action as Clear; Backspace calls the same coherent deletion action as the visible backspace button. Ctrl, Meta, and Alt modified shortcuts are ignored, as are unsupported alphabetic and symbol keys. Supported calculator keys call `preventDefault` once, including when a semantic calculator button has focus, preventing native button activation from duplicating the event. The effect removes its listener on dependency change and unmount. Square root remains keypad-only and no alphabetic free-form input was enabled.
+
+The CSS now applies universal border-box sizing, fluid mobile-first page padding, a 100%-fluid calculator capped at 24rem, a minimum 3.25rem button height increased to 3.5rem from 40rem viewport width, preserved `focus-visible` outlines, and a bounded expression area with wrapping, word breaking, and vertical scrolling. Expression state is never truncated; a test proves all 256 entered characters remain present. Practical local Chrome screenshots were generated outside the repository and visually inspected at 320×568, 375×667, 768×900, and 1440×1000. At 320px there is no horizontal overflow and the shortest viewport uses normal vertical page scrolling to keep the final keypad row reachable; at 375px the complete calculator fits the viewport with comfortable controls; at 768px the layout is centered with larger touch targets and ample spacing; at desktop width the 24rem cap prevents unreasonable expansion. At all four widths the display remains readable, hierarchy is clear, and the absent future backend-selector region does not interfere.
+
+`npm test -- --run` passed one test file with 13 tests and zero failures. New tests cover all supported character keys; Escape, Backspace, and Enter; unsupported `a` and `@`; ignored modified shortcuts; keyboard/keypad canonical equivalence; Escape/Clear and keyboard/control Backspace equivalence; Enter/equals evaluation-boundary equivalence; prevention of duplicate activation with a focused control; and preservation of a 256-character expression. `npm run build` passed strict TypeScript compilation and Vite production build. `npm run lint` passed. `npm run coverage` passed with 100% statements (43/43), branches (13/13), functions (15/15), and lines (41/41), with no threshold added. `npm ls --depth=0` passed with the unchanged approved direct dependencies and no new package.
+
+Semantic buttons, native focusability, visible focus outlines, and accessible display labels remain intact; keyboard support supplements rather than replaces controls. Production-source review found no fetch/XMLHttpRequest/Axios, `eval`, dynamic Function, math operation, numeric parsing, reduction, parser, or frontend evaluator. No REST communication, backend selection communication, mathematical evaluation, Java, Docker, or parity tooling was implemented. Generated outputs remain ignored and the temporary screenshots were written only under `/tmp`. `backend-go/` was not modified. TASK-FE-003 is Complete and TASK-FE-004 and later remain unchanged. There was no deviation or conflict with REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
