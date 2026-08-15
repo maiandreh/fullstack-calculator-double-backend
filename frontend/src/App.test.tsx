@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, vi } from 'vitest'
 import App from './App'
@@ -34,8 +34,8 @@ test('renders the calculator display and complete keypad', () => {
     'Decimal point',
     'Addition',
     'Subtraction',
-    'Multiplication',
-    'Division',
+    'Multiply',
+    'Divide',
     'Exponentiation',
     'Square root',
     'Percentage',
@@ -43,7 +43,7 @@ test('renders the calculator display and complete keypad', () => {
     'Close parenthesis',
     'Clear',
     'Backspace',
-    'Equals',
+    'Evaluate',
   ]) {
     expect(screen.getByRole('button', { name: control })).toBeInTheDocument()
   }
@@ -63,6 +63,36 @@ test('constructs a canonical expression in keypad order', async () => {
   await user.click(screen.getByRole('button', { name: '4' }))
 
   expect(screen.getByLabelText('Expression')).toHaveTextContent('12.5+3-4')
+})
+
+test('presents one conventional, functional set of digit controls', async () => {
+  const user = userEvent.setup()
+  render(<App />)
+  const keypad = within(screen.getByLabelText('Calculator keypad'))
+  const digitNames = keypad
+    .getAllByRole('button')
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent)
+    .filter((name) => name !== null && /^[0-9]$/.test(name))
+
+  expect(digitNames).toEqual(['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'])
+  expect(keypad.getAllByRole('button', { name: '0' })).toHaveLength(1)
+
+  await user.click(keypad.getByRole('button', { name: '0' }))
+  await user.click(keypad.getByRole('button', { name: '7' }))
+  expect(screen.getByLabelText('Expression')).toHaveTextContent('07')
+})
+
+test.each([
+  ['Multiply', '×'],
+  ['Divide', '÷'],
+  ['Exponentiation', 'xʸ'],
+  ['Square root', '√'],
+  ['Backspace', '⌫'],
+  ['Evaluate', '='],
+])('gives the %s symbol an explicit accessible name', (name, symbol) => {
+  render(<App />)
+
+  expect(screen.getByRole('button', { name })).toHaveTextContent(symbol)
 })
 
 test('updates the display after every keypad action in the acceptance sequence', async () => {
@@ -85,8 +115,8 @@ test('maps presentation controls to canonical backend tokens', async () => {
   render(<App />)
 
   for (const control of [
-    'Multiplication',
-    'Division',
+    'Multiply',
+    'Divide',
     'Exponentiation',
     'Percentage',
     'Open parenthesis',
@@ -133,7 +163,7 @@ test('equals with an empty expression makes no network request', async () => {
   vi.stubGlobal('fetch', fetchMock)
   render(<App />)
 
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
 
   expect(fetchMock).not.toHaveBeenCalled()
 })
@@ -181,7 +211,7 @@ test('keyboard and keypad create the same canonical expression', async () => {
 
   fireEvent.keyDown(window, { key: 'Escape' })
   await user.click(screen.getByRole('button', { name: '2' }))
-  await user.click(screen.getByRole('button', { name: 'Multiplication' }))
+  await user.click(screen.getByRole('button', { name: 'Multiply' }))
   await user.click(screen.getByRole('button', { name: '3' }))
   expect(screen.getByLabelText('Expression')).toHaveTextContent('2*3')
 })
@@ -239,9 +269,9 @@ test('sends the canonical expression to the default Go backend and displays succ
 
   expect(screen.getByRole('radio', { name: 'Go' })).toBeChecked()
   await user.click(screen.getByRole('button', { name: '2' }))
-  await user.click(screen.getByRole('button', { name: 'Multiplication' }))
+  await user.click(screen.getByRole('button', { name: 'Multiply' }))
   await user.click(screen.getByRole('button', { name: '3' }))
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
 
   expect(await screen.findByLabelText('Result')).toHaveTextContent('6')
   expect(fetchMock).toHaveBeenCalledWith(
@@ -255,8 +285,8 @@ test('sends the canonical expression to the default Go backend and displays succ
 })
 
 test.each([
-  ['Multiplication', ['2', 'Multiplication', '3'], '2*3'],
-  ['Division', ['8', 'Division', '2'], '8/2'],
+  ['Multiply', ['2', 'Multiply', '3'], '2*3'],
+  ['Divide', ['8', 'Divide', '2'], '8/2'],
   ['Exponentiation', ['2', 'Exponentiation', '3'], '2^3'],
   [
     'Square root',
@@ -272,7 +302,7 @@ test.each([
   for (const control of controls) {
     await user.click(screen.getByRole('button', { name: control }))
   }
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
 
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
   expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
@@ -292,7 +322,7 @@ test('switching backend preserves expression and only Java is contacted on evalu
   expect(screen.getByLabelText('Expression')).toHaveTextContent('2')
   expect(fetchMock).not.toHaveBeenCalled()
 
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
   expect(fetchMock.mock.calls[0][0]).toBe(
     'http://localhost:8081/api/calculate',
@@ -324,10 +354,10 @@ test('displays canonical application errors and removes a stale result', async (
   fireEvent.keyDown(window, { key: '2' })
   fireEvent.keyDown(window, { key: '+' })
   fireEvent.keyDown(window, { key: '3' })
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   expect(await screen.findByLabelText('Result')).toHaveTextContent('5')
 
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   expect(await screen.findByLabelText('Error')).toHaveTextContent(
     'Division by zero is not allowed',
   )
@@ -345,7 +375,7 @@ test('editing the expression clears the previous answer', async () => {
   fireEvent.keyDown(window, { key: '2' })
   fireEvent.keyDown(window, { key: '+' })
   fireEvent.keyDown(window, { key: '3' })
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   expect(await screen.findByLabelText('Result')).toHaveTextContent('5')
 
   await user.click(screen.getByRole('button', { name: 'Addition' }))
@@ -359,7 +389,7 @@ test('clear removes a successful result and the expression', async () => {
   render(<App />)
 
   fireEvent.keyDown(window, { key: '5' })
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   expect(await screen.findByLabelText('Result')).toHaveTextContent('5')
 
   await user.click(screen.getByRole('button', { name: 'Clear' }))
@@ -382,7 +412,7 @@ test('clear removes an error and the expression', async () => {
   render(<App />)
 
   fireEvent.keyDown(window, { key: '2' })
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   expect(await screen.findByLabelText('Error')).toHaveTextContent(
     'Expression is invalid',
   )
@@ -401,7 +431,7 @@ test('reports selected-backend connectivity failures without leaking diagnostics
 
   await user.click(screen.getByRole('radio', { name: 'Java' }))
   await user.click(screen.getByRole('button', { name: '1' }))
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
 
   expect(await screen.findByLabelText('Error')).toHaveTextContent(
     'Unable to reach the Java backend',
@@ -417,7 +447,7 @@ test('empty equals and Enter do not submit', async () => {
   vi.stubGlobal('fetch', fetchMock)
   render(<App />)
 
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   fireEvent.keyDown(window, { key: 'Enter' })
 
   expect(fetchMock).not.toHaveBeenCalled()
@@ -434,7 +464,7 @@ test('equals and Enter cannot duplicate an in-flight submission', async () => {
   render(<App />)
 
   await user.click(screen.getByRole('button', { name: '4' }))
-  const equals = screen.getByRole('button', { name: 'Equals' })
+  const equals = screen.getByRole('button', { name: 'Evaluate' })
   await user.click(equals)
   expect(equals).toBeDisabled()
   await user.click(equals)
@@ -477,7 +507,7 @@ test.each([
   render(<App />)
 
   await user.click(screen.getByRole('button', { name: '5' }))
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
 
   expect(await screen.findByLabelText('Error')).toHaveTextContent(
     'The backend returned an invalid response',
@@ -499,7 +529,7 @@ test('Enter and equals share the API-backed evaluation path', async () => {
   fireEvent.keyDown(window, { key: 'Enter' })
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-  await user.click(screen.getByRole('button', { name: 'Equals' }))
+  await user.click(screen.getByRole('button', { name: 'Evaluate' }))
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   expect(fetchMock.mock.calls[0]).toEqual(fetchMock.mock.calls[1])
 })

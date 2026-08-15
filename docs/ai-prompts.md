@@ -8206,3 +8206,416 @@ Live integration used the completed Go server on port 8080, Vite on port 5173, a
 At measured widths 320px, 375px, 768px, and 1440px, page scroll width equaled viewport width, the backend selector remained contained, a 256-character expression remained present and contained in the scrolling display, and all keypad controls remained rendered. Minimum control dimensions were 57.59×52px, 70.25×52px, 78×56px, and 78×56px respectively. The calculator occupied 294.41px at 320px, 345px at 375px, and a centered bounded 384px at 768px and 1440px. Screenshots were visually reviewed for keypad reachability, readable display, visible selector, touch targets, and sensible desktop width. Go, Vite, and Chrome were stopped after verification; temporary browser files remained under `/tmp`.
 
 Repository hygiene passed: `frontend/node_modules/`, `frontend/dist/`, and `frontend/coverage/` are ignored and do not appear as commit candidates; no secret environment file, generated report, editor metadata, or temporary log was introduced. `git diff --check` passed. No new calculator feature or expression semantic was introduced. `backend-go/` was not modified, and Java, Docker, and parity implementation were not started. TASK-FE-005 is Complete; remaining implementation begins with TASK-JAVA-001. No unresolved conflict or deviation exists against REQUIREMENTS.md, SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md.
+
+## P019-R1 — Frontend UX Human-Review Correction
+
+### Phase
+
+Human Review Correction — Frontend UX
+
+### Objective
+
+Correct the calculator layout and visual hierarchy after manual human review revealed that the current keypad arrangement is functionally usable but does not present a deliberate, familiar calculator experience.
+
+### Prompt
+
+```text
+Prompt ID: P019-R1
+
+Phase: Human Review Correction — Frontend UX
+
+Objective:
+Correct the calculator layout and visual hierarchy after manual human review revealed that the current keypad arrangement is functionally usable but does not present a deliberate, familiar calculator experience.
+
+This is a corrective frontend increment derived from human review.
+
+Before modifying files:
+
+1. Read `AGENTS.md`.
+2. Read `SCOPE.md`.
+3. Read `SPEC.md`.
+4. Read `DESIGN.md`.
+5. Read `TASKS.md`.
+6. Read ADR-004.
+7. Read previous frontend prompt outcomes in `docs/ai-prompts.md`.
+8. Record this exact prompt as `P019-R1` before modifying application files.
+
+Do NOT modify backend code.
+Do NOT modify API behavior.
+Do NOT introduce calculator evaluation in the frontend.
+Do NOT introduce new product functionality.
+Do NOT change the approved expression grammar.
+Do NOT add dependencies.
+
+The objective is layout, usability, visual hierarchy, and responsive refinement only.
+
+## Human review finding
+
+The current calculator has the following UX defects:
+
+* numeric buttons are not arranged in conventional calculator order
+* actions, operators, and digits are visually mixed
+* the backspace icon is not immediately recognizable
+* the display does not clearly distinguish expression from result
+* the keypad looks generated from an arbitrary list rather than intentionally designed
+* the current hierarchy is weaker than expected for a polished technical-assessment submission
+
+Correct these issues without broadening scope.
+
+## 1. Keypad layout
+
+Use a four-column calculator grid with this exact conceptual arrangement:
+
+Row 1:
+
+* Clear
+* Backspace
+* `(`
+* `)`
+
+Row 2:
+
+* square root
+* exponentiation
+* percentage
+* division
+
+Row 3:
+
+* `7`
+* `8`
+* `9`
+* multiplication
+
+Row 4:
+
+* `4`
+* `5`
+* `6`
+* subtraction
+
+Row 5:
+
+* `1`
+* `2`
+* `3`
+* addition
+
+Row 6:
+
+* `0`, spanning two columns
+* decimal point
+* equals
+
+The rendered visual symbols should be familiar:
+
+* multiplication: `×`
+* division: `÷`
+* exponentiation: `xʸ`
+* square root: `√`
+* backspace: use a recognizable representation such as `⌫`
+
+The canonical expression tokens must remain unchanged internally.
+
+Do not duplicate the `0` button merely to fill two grid cells.
+
+## 2. Button categories
+
+Create clear visual hierarchy between:
+
+### Numeric buttons
+
+* digits
+* decimal point
+
+### Operators
+
+* `+`
+* `−`
+* `×`
+* `÷`
+* `xʸ`
+* `%`
+* `√`
+
+### Secondary controls
+
+* parentheses
+* backspace
+
+### Destructive control
+
+* Clear
+
+### Primary action
+
+* Equals
+
+Do not require dramatically different colors for every category.
+
+Use restrained styling.
+
+Equals should be the strongest primary action.
+
+Clear may have a danger/destructive treatment but must not visually dominate the entire calculator.
+
+## 3. Display redesign
+
+The display should visually behave like a calculator display.
+
+Use two conceptual levels:
+
+### Expression
+
+* smaller
+* visually secondary
+* right aligned
+* capable of handling long expressions without breaking the layout
+
+### Result
+
+* larger
+* visually primary
+* right aligned
+
+When no result exists, provide a sensible neutral display state without pretending a calculation occurred.
+
+Error feedback must remain clearly visible but should not permanently consume the main result hierarchy.
+
+Do not calculate any result locally.
+
+## 4. Backend selector
+
+Keep the Go/Java selector near the top of the calculator.
+
+Make it compact and visually secondary to the calculator display and keypad.
+
+Requirements remain:
+
+* both choices visible
+* selected backend obvious
+* accessible labels
+* changing selection does not evaluate
+* expression is preserved
+
+Do not redesign it into a large navigation control.
+
+## 5. Mobile-first sizing
+
+The calculator should look intentional around common mobile widths.
+
+Target practical usability around:
+
+* 320px
+* 375px
+* 390–430px
+
+It should also remain visually balanced on desktop.
+
+Use:
+
+* sensible max-width
+* full available width on small screens
+* consistent button gaps
+* buttons large enough for touch
+* no horizontal page overflow
+
+Do not create separate mobile and desktop markup.
+
+## 6. Long-expression behavior
+
+Ensure long expressions:
+
+* remain visible/readable
+* do not resize the entire calculator horizontally
+* do not move keypad controls
+* use a contained overflow or scrolling strategy where appropriate
+
+Preserve the complete underlying expression.
+
+## 7. Accessibility
+
+Ensure every symbolic button has a clear accessible name.
+
+At minimum:
+
+* `×` → Multiply
+* `÷` → Divide
+* `xʸ` → Exponentiation
+* `√` → Square root
+* `⌫` → Backspace
+* `=` → Evaluate
+* `C` or Clear → Clear
+
+Preserve keyboard focus indication.
+
+Do not replace native buttons with non-semantic clickable elements.
+
+## 8. Architecture restraint
+
+Do not introduce:
+
+* component libraries
+* Tailwind
+* Bootstrap
+* CSS-in-JS framework
+* icon package merely for backspace
+* animation library
+* design-system infrastructure
+
+Use the existing React/CSS approach.
+
+If the existing Keypad implementation is data-driven, it may remain data-driven, but the ordering and layout metadata must make the deliberate calculator structure explicit.
+
+Do not encode layout through fragile nth-child selectors if a clearer semantic approach exists.
+
+## 9. Behavior preservation
+
+Do not regress:
+
+* canonical token construction
+* keypad behavior
+* keyboard behavior
+* clear
+* backspace
+* equals
+* backend selection
+* API integration
+* loading behavior
+* application errors
+* connectivity errors
+* duplicate-submit protection
+
+This is not permission to rewrite working application logic.
+
+## 10. Tests
+
+Update/add only tests needed to protect behavior affected by the correction.
+
+Verify at minimum:
+
+* all required keypad controls still exist
+* digits remain semantically ordered/usable
+* zero exists exactly once
+* zero remains functional despite spanning two columns
+* symbolic operator buttons retain correct accessible names
+* presentation symbols still append correct canonical tokens
+* clear/backspace/evaluate behavior remains unchanged
+* backend selector behavior remains unchanged
+
+Do not write brittle tests that assert CSS class ordering for every button.
+
+Visual layout should primarily be reviewed manually.
+
+## 11. Verification
+
+Run:
+
+`npm test -- --run`
+
+`npm run build`
+
+`npm run lint`
+
+`npm run coverage`
+
+Report all results.
+
+Confirm no dependency changes unless required; ideally package manifests should not change.
+
+## 12. Manual visual verification
+
+Perform or prepare the application for human verification at:
+
+* approximately 320px
+* approximately 375px
+* approximately 768px
+* desktop
+
+Report whether:
+
+* numeric keypad order is conventional
+* no horizontal scrolling exists
+* 0 spans two columns
+* expression/result hierarchy is clear
+* controls are comfortably tappable
+* backend selector remains clear but secondary
+* long expression behavior remains contained
+
+If actual browser visual inspection is not available to the agent, state that clearly and leave final visual approval to the human reviewer.
+
+Do not claim visual verification that did not happen.
+
+## 13. Task tracking
+
+Do not create a new product task.
+
+Treat this as a human-review correction associated with the frontend quality gate.
+
+Update TASK-FE-005 only if its current status/evidence needs a factual correction because of this review.
+
+Do not mark unrelated tasks.
+
+## 14. Prompt audit outcome
+
+Update P019-R1 Outcome with:
+
+* human-review issue addressed
+* files modified
+* keypad layout correction
+* display hierarchy correction
+* backend-selector refinement
+* accessibility corrections
+* responsive changes
+* tests/results
+* build/lint/coverage results
+* dependency status
+* whether manual visual inspection was actually performed
+* confirmation that no product scope or calculation semantics changed
+* confirmation that no backend files were modified
+
+Do not rewrite historical prompts.
+
+## 15. Required report
+
+After implementation report:
+
+1. files modified
+2. final keypad row structure
+3. display hierarchy
+4. button-category styling strategy
+5. backend selector changes
+6. accessibility changes
+7. responsive changes
+8. tests added/updated
+9. test result
+10. build result
+11. lint result
+12. coverage result
+13. dependency changes, if any
+14. manual visual-verification status
+15. `git diff --stat`
+16. `git status`
+17. any remaining UX concern
+
+Do not commit.
+Do not push.
+
+Stop for human visual review.
+```
+
+### Outcome
+
+Completed the P019-R1 human-review correction associated with `TASK-FE-005`. Modified `frontend/src/components/Keypad.tsx`, `frontend/src/components/Display.tsx`, `frontend/src/App.css`, and `frontend/src/App.test.tsx`; recorded P019-R1 and this outcome in `docs/ai-prompts.md`. `TASKS.md` required no additional status change because TASK-FE-005 remains Complete and this correction restores its human-review evidence. No backend file, API client, calculator state, backend configuration, package manifest, or lockfile was modified.
+
+The keypad remains data-driven but now declares a deliberate row model and renders the exact requested four-column arrangement: Clear/Backspace/open parenthesis/close parenthesis; square root/exponentiation/percentage/division; 7/8/9/multiplication; 4/5/6/subtraction; 1/2/3/addition; and one zero spanning two columns/decimal/evaluate. Numeric, operator, secondary, destructive, and primary-action categories have restrained semantic classes rather than positional `nth-child` styling. Numbers use neutral slate controls, operators use a consistent indigo treatment, secondary controls remain subdued, Clear uses a contained dark-red treatment, and Evaluate uses the strongest indigo plus a restrained shadow. Canonical tokens remain `*`, `/`, `^`, and `sqrt(`.
+
+The display now contains a distinct main hierarchy: the expression is a muted, right-aligned 16px single line with contained horizontal scrolling, while the result is a right-aligned primary value scaling from 28px on 320px to 36px on larger screens. Empty result state remains neutral and does not synthesize an answer. Error feedback remains in its separate polite live region beneath the main display hierarchy. Chrome overflow behavior was corrected so short results show no scrollbar, and long-expression scrollbars use a small restrained thumb. The compact Go/Java selector remains above the display; its uppercase 11px legend and smaller segmented choices make it visually secondary while retaining native labeled radios and obvious selection.
+
+Accessible names were corrected to `Multiply`, `Divide`, `Exponentiation`, `Square root`, `Backspace`, and `Evaluate`; Clear retains its native visible accessible name. Every control remains a native type-button, backend choices remain native radios, and existing focus-visible outlines are preserved. The backspace control uses the dedicated `⌫` glyph with both an accessible name and title. No non-semantic clickable element or dependency was introduced.
+
+`frontend/src/App.test.tsx` now verifies conventional semantic digit order `7,8,9,4,5,6,1,2,3,0`, exactly one zero control, functional zero input despite its two-column presentation, and explicit accessible names paired with the visible `×`, `÷`, `xʸ`, `√`, `⌫`, and `=` symbols. Existing tests continue to verify all controls, canonical presentation-token mapping, clear, backspace, API-backed Evaluate behavior, keyboard input, backend selection, loading, application/connectivity errors, response validation, and duplicate-submit prevention. The final `npm test -- --run` passed 2 files with 42 tests and zero failures. `npm run build` passed strict TypeScript and Vite production build. `npm run lint` passed. `npm run coverage` passed with 97.75% statements (87/89), 92.15% branches (47/51), 100% functions (21/21), and 97.70% lines (85/87). `npm ls --depth=0` passed with the unchanged approved dependency graph; `package.json` and `package-lock.json` did not change.
+
+Actual browser visual inspection was performed with the installed headless Chrome at 320px, 375px, 768px, and 1440px, using the unchanged Go backend to display `(2+3)*4 = 20`. Browser measurements confirmed the exact six visual rows, one zero spanning two columns, right-aligned expression/result hierarchy, visible backend selector, and no horizontal page overflow at every width. The calculator was 296px wide at 320px, 351px at 375px, and a centered capped 400px at 768px and 1440px; minimum button heights were 56px on mobile and 60px on larger viewports. Screenshots were visually inspected and showed conventional numeric order, distinct action/operator/number categories, a clear but secondary backend selector, comfortable controls, and balanced desktop presentation. A separate browser scenario preserved all 256 expression characters in the horizontally scrolling display, kept the keypad width fixed, and produced no page overflow. The temporary Vite and Chrome processes were stopped after inspection; temporary evidence remained under `/tmp`.
+
+No product scope, expression grammar, calculation semantic, frontend evaluation, API behavior, backend-selection behavior, or networking behavior changed. No dependency was added. No backend file was modified. The correction introduces no unresolved conflict with SCOPE.md, SPEC.md, DESIGN.md, ADR-004, or TASKS.md. Final visual approval remains with the human reviewer.
