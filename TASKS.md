@@ -200,7 +200,7 @@ Each task cites requirement/constraint IDs, relevant `SPEC-*` rules, scope/desig
 - **Implementation scope:** Unary signs, right-associative exponentiation and precedence interaction, postfix compositional percentage, compound square root, and invalid real domain.
 - **Verification required:** Direct JUnit tests for all listed criteria and representative compositions.
 - **Definition of Done:** All advanced committed semantics pass domain tests and match `SPEC.md`, not Go incidental details.
-- **Status:** Not Started
+- **Status:** Complete
 
 ### TASK-JAVA-004 — Enforce Java finite-result behavior
 

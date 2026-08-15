@@ -1,6 +1,7 @@
 package io.github.maiandreh.calculator.domain;
 
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.DIVISION_BY_ZERO;
+import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_DOMAIN;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_EXPRESSION;
 
 public final class ExpressionEvaluator {
@@ -77,10 +78,44 @@ public final class ExpressionEvaluator {
             if (consume('-')) {
                 return -parseUnary();
             }
-            return parsePrimary();
+            return parsePower();
+        }
+
+        private double parsePower() {
+            double base = parsePostfix();
+            if (!consume('^')) {
+                return base;
+            }
+
+            double result = Math.pow(base, parseUnary());
+            if (Double.isNaN(result)) {
+                throw new CalculationException(INVALID_DOMAIN);
+            }
+            return result;
+        }
+
+        private double parsePostfix() {
+            double value = parsePrimary();
+            while (consume('%')) {
+                value /= 100.0d;
+            }
+            return value;
         }
 
         private double parsePrimary() {
+            if (consumeKeyword("sqrt")) {
+                if (!consume('(')) {
+                    throw invalidExpression();
+                }
+                double argument = parseExpression();
+                if (!consume(')')) {
+                    throw invalidExpression();
+                }
+                if (argument < 0.0d) {
+                    throw new CalculationException(INVALID_DOMAIN);
+                }
+                return Math.sqrt(argument);
+            }
             if (consume('(')) {
                 double value = parseExpression();
                 if (!consume(')')) {
@@ -89,6 +124,15 @@ public final class ExpressionEvaluator {
                 return value;
             }
             return parseNumber();
+        }
+
+        private boolean consumeKeyword(String keyword) {
+            skipWhitespace();
+            if (!input.startsWith(keyword, position)) {
+                return false;
+            }
+            position += keyword.length();
+            return true;
         }
 
         private double parseNumber() {

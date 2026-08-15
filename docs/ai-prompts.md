@@ -9461,3 +9461,442 @@ Implemented Java `double` addition, subtraction, multiplication, and division. V
 Final `./mvnw test` passed 43 tests: 42 plain domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` both completed with BUILD SUCCESS. JaCoCo 0.8.15 generated its report after analyzing 6 compiled classes, recording 95.81% instruction coverage (343/358), 92.39% line coverage (85/92), 58/64 branches, and 86.79% method coverage (46/53), with no threshold. `./mvnw dependency:tree` passed and the dependency graph is unchanged: Spring Boot Web is the sole direct production dependency and Spring Boot Test is test-scoped; no parser or calculator-expression dependency was added. Spring's transitive framework `spring-expression` module is not used by the domain.
 
 `TASK-JAVA-002` is Complete and `TASK-JAVA-003` remains Not Started. Exponentiation, percentage, square-root evaluation, the comprehensive finite-result gate, `/api/calculate`, transport DTOs, HTTP error mapping, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. The implementation was derived from `SPEC.md` and the Java ADRs without inspecting or copying Go source. No conflict or deviation from the approved artifacts was found.
+
+## P022 — Java Advanced Expression Semantics
+
+### Phase
+
+Implementation — Java Advanced Expression Semantics
+
+### Objective
+
+Execute only `TASK-JAVA-003` from `TASKS.md`: complete the advanced expression semantics in the Java domain while preserving the exact behavior defined by `SPEC.md` and without introducing HTTP concerns.
+
+### Prompt
+
+```text
+Prompt ID: P022
+
+Phase: Implementation — Java Advanced Expression Semantics
+
+Objective:
+Execute only `TASK-JAVA-003` from `TASKS.md`: complete the advanced expression semantics in the Java domain while preserving the exact behavior defined by `SPEC.md` and without introducing HTTP concerns.
+
+Before doing anything:
+
+1. Read `AGENTS.md`.
+2. Read `REQUIREMENTS.md`.
+3. Read `SCOPE.md`.
+4. Read `SPEC.md`.
+5. Read `DESIGN.md`.
+6. Read `TASKS.md`.
+7. Read ADR-002 and ADR-003.
+8. Read `docs/ai-prompts.md`.
+9. Record this exact prompt as `P022` in `docs/ai-prompts.md` before modifying application files.
+
+Execute only:
+
+`TASK-JAVA-003 — Implement Java advanced expression semantics`
+
+Do NOT implement:
+
+- finite-result quality gate beyond what is strictly necessary for specific domain errors
+- REST calculator endpoint
+- request/response DTOs
+- HTTP error mapping
+- frontend changes
+- Go changes
+- Docker
+- parity tooling
+
+Do NOT modify approved requirements, scope, specification, design, or ADRs.
+
+If the current Java parser structure cannot satisfy the approved precedence/associativity semantics cleanly, stop and report the conflict before changing architecture.
+
+## 1. Unary signs
+
+Support unary:
+
+- `+`
+- `-`
+
+Required examples:
+
+`-2 = -2`
+
+`+2 = 2`
+
+`3 * -2 = -6`
+
+Preserve the approved grammar restriction that malformed repeated operators such as `2 ++ 3` remain invalid where required by SPEC.
+
+Do not broadly accept repeated operators merely because unary operators exist.
+
+## 2. Exponentiation
+
+Implement:
+
+`a ^ b`
+
+using Java `double` / binary64-equivalent semantics.
+
+Exponentiation must be right-associative.
+
+Required:
+
+`2 ^ 3 ^ 2 = 512`
+
+because it means:
+
+`2 ^ (3 ^ 2)`
+
+Do not implement left-associative exponentiation.
+
+## 3. Unary-minus and exponentiation precedence
+
+This behavior must exactly match SPEC.
+
+Required:
+
+`-2 ^ 2 = -4`
+
+Required:
+
+`(-2) ^ 2 = 4`
+
+Required:
+
+`2 ^ -2 = 0.25`
+
+The implementation must not let a convenience parser structure redefine these cases.
+
+Add direct tests proving each one.
+
+## 4. Percentage
+
+Implement postfix percentage syntax.
+
+Exact semantics:
+
+`x% = x / 100`
+
+Required:
+
+`20% = 0.2`
+
+`150 * 20% = 30`
+
+`100 + 20% = 100.2`
+
+Do not implement context-sensitive consumer-calculator percentage semantics.
+
+`100 + 20%` must not become `120`.
+
+Do not invent semantics for repeated postfix `%` if SPEC does not allow them.
+
+## 5. Square root
+
+Implement canonical:
+
+`sqrt(expression)`
+
+Required:
+
+`sqrt(81) = 9`
+
+`sqrt(9 + 7) = 4`
+
+Square root must accept a full expression argument according to the approved grammar.
+
+Do not add Unicode `√` as backend syntax.
+
+The frontend presentation layer may later use `√`, but transport/domain syntax remains canonical `sqrt(...)`.
+
+## 6. Invalid real-number domain
+
+The product supports real-number results only.
+
+For:
+
+`sqrt(-1)`
+
+return the approved transport-independent invalid-domain error category.
+
+Do not return NaN as a successful domain result for this case.
+
+Do not introduce complex numbers.
+
+Do not map the error to HTTP yet.
+
+## 7. Parser structure
+
+Extend the existing bounded custom parser minimally.
+
+Preserve:
+
+- closed grammar
+- complete input consumption
+- decimal literals
+- grouping
+- basic arithmetic precedence
+- left associativity of +, -, *, /
+- right associativity of ^
+- postfix percentage semantics
+- unary/power precedence
+
+Do not introduce:
+
+- expression libraries
+- parser generators
+- generic function registries for hypothetical functions
+- AST/visitor frameworks without concrete need
+- strategy/factory abstractions
+- reflection-based operator dispatch
+
+Direct evaluation during parsing remains acceptable.
+
+## 8. Function recognition
+
+Square root is the only approved function.
+
+If the parser already has a minimal identifier mechanism, restrict it to `sqrt`.
+
+Otherwise, implement the smallest explicit recognition needed.
+
+Unsupported functions such as:
+
+`sin(1)`
+
+must remain invalid.
+
+Do not generalize for future functions.
+
+## 9. Existing semantics preservation
+
+Do not regress:
+
+- numeric literal rules
+- scientific-notation rejection
+- whitespace
+- parentheses
+- expression length
+- syntax rejection
+- addition
+- subtraction
+- multiplication
+- division
+- division by zero
+- arithmetic precedence
+- left associativity
+
+Representative existing domain tests must remain green.
+
+## 10. Tests
+
+Use direct JUnit 5 domain tests.
+
+Derive them from `TASK-JAVA-003` and referenced acceptance criteria.
+
+Cover at minimum:
+
+### Unary
+- `-2`
+- `+2`
+- `3 * -2`
+
+### Exponentiation
+- `2 ^ 3 = 8`
+- `5 ^ 0 = 1`
+- `2 ^ -2 = 0.25`
+
+### Associativity
+- `2 ^ 3 ^ 2 = 512`
+
+### Unary/power precedence
+- `-2 ^ 2 = -4`
+- `(-2) ^ 2 = 4`
+
+### Percentage
+- `20% = 0.2`
+- `150 * 20% = 30`
+- `100 + 20% = 100.2`
+
+### Square root
+- `sqrt(81) = 9`
+- `sqrt(9 + 7) = 4`
+- a representative decimal square root if useful
+
+### Invalid domain
+- `sqrt(-1)` returns the approved invalid-domain category
+
+### Invalid syntax
+- malformed sqrt syntax
+- unsupported function still rejected
+- malformed percentage syntax remains rejected according to SPEC
+
+### Regression
+- representative core arithmetic
+- arithmetic precedence
+- division by zero
+- malformed expression rejection
+
+Prefer parameterized tests where they improve readability.
+
+Do not add MockMvc tests.
+
+## 11. Domain errors
+
+Keep errors transport-independent.
+
+At minimum, preserve distinct categories for:
+
+- invalid expression
+- division by zero
+- invalid real-number domain
+
+Do not introduce HTTP status codes or REST messages here.
+
+Do not leak Java math/parser implementation details into future public messages.
+
+## 12. Finite-result task boundary
+
+TASK-JAVA-004 remains responsible for the complete guarantee that successful results are finite.
+
+However, this task must not allow `sqrt(-1)` to become a successful NaN.
+
+Use the more specific INVALID_DOMAIN category as required by SPEC.
+
+Do not mark TASK-JAVA-004 complete.
+
+## 13. Existing bootstrap preservation
+
+Do not regress TASK-JAVA-001 or TASK-JAVA-002.
+
+The Java backend must continue to:
+
+- build through Maven Wrapper
+- start on port 8081
+- expose `/health`
+- pass bootstrap/domain tests
+- generate JaCoCo
+- use approved dependencies only
+
+Do not modify `backend-go/` or `frontend/`.
+
+## 14. Dependency discipline
+
+Do not add production dependencies.
+
+After implementation run:
+
+`./mvnw dependency:tree`
+
+Confirm no:
+
+- expression library
+- parser library
+- Lombok
+- unrelated dependency
+
+was introduced.
+
+## 15. Verification
+
+From `backend-java/`, run:
+
+`./mvnw test`
+
+`./mvnw package`
+
+Generate/confirm JaCoCo report.
+
+Run:
+
+`./mvnw dependency:tree`
+
+Report:
+
+- total tests where practical
+- failures/errors
+- package/build result
+- JaCoCo result
+- dependency result
+
+## 16. Task tracking
+
+Update only:
+
+`TASK-JAVA-003`
+
+Mark it Complete only if its full Definition of Done is satisfied.
+
+Do not modify TASK-JAVA-004 or later task statuses.
+
+## 17. Prompt audit
+
+Update P022 Outcome in `docs/ai-prompts.md` with factual evidence including:
+
+- TASK-JAVA-003 result
+- files created/modified
+- unary semantics
+- exponentiation semantics
+- right associativity
+- unary/exponent precedence
+- signed exponent behavior
+- percentage semantics
+- square-root semantics
+- invalid-domain behavior
+- tests/results
+- package/build result
+- JaCoCo result
+- dependency result
+- task status
+- confirmation that REST calculator API, Docker, and parity tooling were not implemented
+- confirmation that frontend and Go backend were not modified
+
+Do not rewrite prior prompts/outcomes.
+
+## 18. Required report
+
+After implementation report:
+
+1. files created/modified
+2. concise parser changes
+3. result/test for `2 ^ 3 ^ 2`
+4. result/test for `-2 ^ 2`
+5. result/test for `(-2) ^ 2`
+6. result/test for `2 ^ -2`
+7. result/test for `20%`
+8. result/test for `150 * 20%`
+9. result/test for `100 + 20%`
+10. result/test for `sqrt(81)`
+11. result/test for `sqrt(9 + 7)`
+12. invalid-domain test for `sqrt(-1)`
+13. representative regression results
+14. `./mvnw test`
+15. `./mvnw package`
+16. JaCoCo result
+17. dependency tree summary
+18. `git diff --stat`
+19. `git status`
+20. TASK-JAVA-003 status
+21. remaining work beginning with TASK-JAVA-004
+22. any deviation/conflict with approved artifacts
+
+Do not commit.
+Do not push.
+
+Stop after TASK-JAVA-003 and wait for human review.
+```
+
+### Outcome
+
+Completed `TASK-JAVA-003`. Modified `backend-java/src/main/java/io/github/maiandreh/calculator/domain/ExpressionEvaluator.java`, `backend-java/src/main/java/io/github/maiandreh/calculator/domain/CalculationException.java`, and `backend-java/src/test/java/io/github/maiandreh/calculator/domain/ExpressionEvaluatorTest.java`; updated only TASK-JAVA-003 in `TASKS.md` and recorded P022 in this audit trail. The existing direct-evaluation recursive-descent parser was extended minimally with explicit `power`, `postfix`, and `sqrt` primary stages. No AST, parser framework, function registry, reflection, service layer, or dependency was introduced.
+
+Unary plus/minus now support `-2`, `+2`, and `3 * -2`. Exponentiation uses `Math.pow`, parses its exponent through the unary level, and is right-associative: `2 ^ 3 ^ 2 = 512`, `-2 ^ 2 = -4`, `(-2) ^ 2 = 4`, and `2 ^ -2 = 0.25`. Postfix percentage is compositional division by 100: `20% = 0.2`, `150 * 20% = 30`, and `100 + 20% = 100.2`. Repeated postfix percentage remains accepted because the approved SPEC grammar explicitly defines `postfix ::= primary ("%")*`. Square root is recognized explicitly as the sole function, accepts a full expression, and yields `sqrt(81) = 9` and `sqrt(9 + 7) = 4`; Unicode square-root syntax, split identifiers, unsupported functions, and malformed calls remain invalid.
+
+Added the transport-independent `INVALID_DOMAIN` category. `sqrt(-1)` returns that category instead of successful NaN; `Math.pow` NaN outcomes are likewise classified as invalid real-domain operations, while comprehensive infinity/non-finite-result enforcement remains deferred to TASK-JAVA-004. Existing invalid-expression and division-by-zero categories are preserved, including `2 ++ 3` rejection and positive/negative-zero divisor handling.
+
+Final `./mvnw test` passed 68 tests: 67 direct domain cases and the preserved health integration test, with 0 failures, 0 errors, and 0 skipped. `./mvnw package` and `./mvnw verify` completed with BUILD SUCCESS. JaCoCo 0.8.15 analyzed 6 compiled classes and reported 96.25% instruction coverage (436/453), 92.50% branch coverage (74/80), 94.07% line coverage (111/118), and 89.06% method coverage (57/64), with no threshold. `./mvnw dependency:tree` passed with the unchanged direct dependency graph: Spring Boot Web at compile scope and Spring Boot Test at test scope. No expression/parser library, Lombok, or unrelated dependency was introduced; Spring Framework's transitive `spring-expression` module is not used by the calculator domain.
+
+`TASK-JAVA-003` is Complete and `TASK-JAVA-004` remains Not Started. The Maven Wrapper build, port 8081 configuration, `/health`, core grammar/arithmetic behavior, and bootstrap test remain intact. The REST calculator API, request/response DTOs, HTTP mapping, comprehensive finite-result gate, Docker, and parity tooling were not implemented. No frontend or Go-backend file was modified. No deviation or conflict with SPEC, DESIGN, ADR-002, ADR-003, or TASKS was found.

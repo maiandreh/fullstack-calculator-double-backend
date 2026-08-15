@@ -1,6 +1,7 @@
 package io.github.maiandreh.calculator.domain;
 
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.DIVISION_BY_ZERO;
+import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_DOMAIN;
 import static io.github.maiandreh.calculator.domain.CalculationException.Category.INVALID_EXPRESSION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,9 +48,37 @@ class ExpressionEvaluatorTest {
     }
 
     @ParameterizedTest
+    @MethodSource("advancedExpressions")
+    void evaluatesAdvancedExpressions(String expression, double expected) {
+        assertEquals(expected, evaluator.evaluate(expression));
+    }
+
+    private static Stream<Arguments> advancedExpressions() {
+        return Stream.of(
+                Arguments.of("-2", -2.0d),
+                Arguments.of("+2", 2.0d),
+                Arguments.of("3 * -2", -6.0d),
+                Arguments.of("2 ^ 3", 8.0d),
+                Arguments.of("5 ^ 0", 1.0d),
+                Arguments.of("2 ^ -2", 0.25d),
+                Arguments.of("2 ^ 3 ^ 2", 512.0d),
+                Arguments.of("-2 ^ 2", -4.0d),
+                Arguments.of("(-2) ^ 2", 4.0d),
+                Arguments.of("20%", 0.2d),
+                Arguments.of("20%%", 0.002d),
+                Arguments.of("150 * 20%", 30.0d),
+                Arguments.of("100 + 20%", 100.2d),
+                Arguments.of("sqrt(81)", 9.0d),
+                Arguments.of("sqrt(9 + 7)", 4.0d),
+                Arguments.of("sqrt(2.25)", 1.5d),
+                Arguments.of("sqrt((4) * 4)", 4.0d));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
-        ".", "1.2.3", "1e3", "1,5", "foo", "sin(1)", "sqrt(1)",
-        "2 +", "2 ++ 3", "(1", "1)", "()", "1abc", "2 ^ 3", "20%"
+        ".", "1.2.3", "1e3", "1,5", "foo", "sin(1)", "sq rt(1)",
+        "sqrt", "sqrt()", "sqrt 1", "sqrt(1", "sqrt(1))", "√(1)",
+        "2 +", "2 ++ 3", "(1", "1)", "()", "1abc", "%20", "20%2", "2 ^"
     })
     void rejectsInvalidOrNotYetImplementedGrammar(String expression) {
         assertCategory(INVALID_EXPRESSION, expression);
@@ -72,6 +101,11 @@ class ExpressionEvaluatorTest {
     @ValueSource(strings = {"1 / 0", "1 / -0", "1 / 0.0", "1 / -0.0"})
     void distinguishesDivisionByPositiveAndNegativeZero(String expression) {
         assertCategory(DIVISION_BY_ZERO, expression);
+    }
+
+    @Test
+    void distinguishesInvalidSquareRootDomain() {
+        assertCategory(INVALID_DOMAIN, "sqrt(-1)");
     }
 
     private void assertCategory(CalculationException.Category expected, String expression) {
